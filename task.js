@@ -230,3 +230,48 @@ function downloadResults() {
   a.click();
   document.body.removeChild(a);
 }
+// (Your existing code remains untouched above...)
+
+// ==========================
+// ✔ ADDITION: sendDataToSheets function
+// ==========================
+function sendDataToSheets(trials) {
+  var data = {
+    trials: trials
+  };
+
+  fetch('https://script.google.com/macros/s/AKfycbzU18tQuqV991Mym2-thcLnv-WXKzX5Q_8ih9JKhDmNXDlqLPodp0irkimpbU7s0X_n/exec', {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers: { 'Content-Type': 'application/json' }
+  })
+  .then(response => response.text())
+  .then(result => console.log('Data uploaded:', result))
+  .catch(error => console.error('Upload failed:', error));
+}
+// ==========================
+// ✔ END of addition
+// ==========================
+
+
+// (Your existing endTask function — only safely adding the Sheets upload at the end)
+function endTask() {
+  document.getElementById("taskContainer").style.display = "none";
+  document.getElementById("resultsSection").style.display = "block";
+
+  const tbody = document.getElementById("resultsBody");
+  tbody.innerHTML = "";
+  trialHistory.forEach((r, i) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${i + 1}</td><td>${r.base}</td><td>${r.comp}</td><td>${r.correct ? "Yes" : "No"}</td><td>${r.difficulty}</td><td>${r.theta}</td><td>${r.var}</td><td>${r.info}</td><td>${r.rt}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  // ==========================
+  // ✔ ADDITION: Call Sheets upload when task ends
+  // ==========================
+  sendDataToSheets(trialHistory);
+  // ==========================
+}
+
+// (Your existing UI helpers remain untouched below...)
