@@ -240,15 +240,18 @@ function sendDataToSheets(trials) {
     trials: trials
   };
 
+  var payload = 'data=' + encodeURIComponent(JSON.stringify(data));
+
   fetch('https://script.google.com/macros/s/AKfycbzU18tQuqV991Mym2-thcLnv-WXKzX5Q_8ih9JKhDmNXDlqLPodp0irkimpbU7s0X_n/exec', {
     method: 'POST',
-    body: JSON.stringify(data),
-    headers: { 'Content-Type': 'application/json' }
+    body: payload,
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
   })
   .then(response => response.text())
-  .then(result => console.log('Data uploaded:', result))
-  .catch(error => console.error('Upload failed:', error));
+  .then(result => console.log('✅ Data uploaded:', result))
+  .catch(error => console.error('❌ Upload failed:', error));
 }
+
 // ==========================
 // ✔ END of addition
 // ==========================
