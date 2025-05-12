@@ -233,24 +233,37 @@ function downloadResults() {
 // (Your existing code remains untouched above...)
 
 // ==========================
-// ✔ ADDITION: sendDataToSheets function
+// ✔ ADDITION: sendDataToForm function
 // ==========================
-function sendDataToSheets(trials) {
-  var data = {
-    trials: trials
-  };
+function sendDataToForm(trials) {
+  trials.forEach((trial, i) => {
+    var formData = new FormData();
+    formData.append('entry.1824159362', participantID);
+    formData.append('entry.654470437', yearGroup);
+    formData.append('entry.1676118320', i + 1);
+    formData.append('entry.114306487', trial.base);
+    formData.append('entry.552854560', trial.comp);
+    formData.append('entry.1743886930', trial.correct);
+    formData.append('entry.1664407653', trial.difficulty);
+    formData.append('entry.2064471242', trial.theta);
+    formData.append('entry.176375042', trial.var);
+    formData.append('entry.1758611178', trial.info);
+    formData.append('entry.1655679259', trial.rt);
+    formData.append('entry.277208853', '');
+    formData.append('entry.339118186', '');
+    formData.append('entry.1282609887', '');
+    formData.append('entry.1348312407', '');
 
-  var payload = 'data=' + encodeURIComponent(JSON.stringify(data));
-
-  fetch('https://script.google.com/macros/s/AKfycbzU18tQuqV991Mym2-thcLnv-WXKzX5Q_8ih9JKhDmNXDlqLPodp0irkimpbU7s0X_n/exec', {
-    method: 'POST',
-    body: payload,
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  })
-  .then(response => response.text())
-  .then(result => console.log('✅ Data uploaded:', result))
-  .catch(error => console.error('❌ Upload failed:', error));
+    fetch('https://docs.google.com/forms/d/e/1FAIpQLSfYQ01gwvUhKz9CIfgJZKD2gJ-LNJMhNl6_z5Miez9ai6sO5g/formResponse', {
+      method: 'POST',
+      mode: 'no-cors',
+      body: formData
+    })
+    .then(() => console.log('✅ Trial uploaded to Form'))
+    .catch(error => console.error('❌ Upload failed:', error));
+  });
 }
+
 
 // ==========================
 // ✔ END of addition
@@ -271,9 +284,9 @@ function endTask() {
   });
 
   // ==========================
-  // ✔ ADDITION: Call Sheets upload when task ends
+  // ✔ ADDITION: Call form upload when task ends
   // ==========================
-  sendDataToSheets(trialHistory);
+sendDataToForm(trialHistory);
   // ==========================
 }
 
