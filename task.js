@@ -238,32 +238,31 @@ function downloadResults() {
 function sendDataToForm(trials) {
   trials.forEach((trial, i) => {
     var formData = new FormData();
-    formData.append('entry.1824159362', participantID);
-    formData.append('entry.654470437', yearGroup);
-    formData.append('entry.1676118320', i + 1);
-    formData.append('entry.114306487', trial.base);
-    formData.append('entry.552854560', trial.comp);
-    formData.append('entry.1743886930', trial.correct);
-    formData.append('entry.1664407653', trial.difficulty);
-    formData.append('entry.2064471242', trial.theta);
-    formData.append('entry.176375042', trial.var);
-    formData.append('entry.1758611178', trial.info);
-    formData.append('entry.1655679259', trial.rt);
-    formData.append('entry.277208853', '');
-    formData.append('entry.339118186', '');
-    formData.append('entry.1282609887', '');
-    formData.append('entry.1348312407', '');
+    formData.append('entry.1824159362', participantID);                 // Participant ID
+    formData.append('entry.654470437', yearGroup);                       // Year Group
+    formData.append('entry.1469399249', i + 1);                          // Trial Number (1-based)
+    formData.append('entry.1676118320', trial.base);                     // Base Image
+    formData.append('entry.114306487', trial.comp);                      // Comparison Image
+    formData.append('entry.552854560', trial.correct ? 'Yes' : 'No');    // Correct Yes/No
+    formData.append('entry.1743886930', trial.difficulty);               // Difficulty
+    formData.append('entry.1664407653', trial.theta);                    // Theta
+    formData.append('entry.2064471242', trial.var);                      // Variance
+    formData.append('entry.176375042', trial.info);                      // Info
+    formData.append('entry.1758611178', trial.rt);                       // RT
+    formData.append('entry.1655679259', '');                              // Additional Variable 1 (empty placeholder)
+    formData.append('entry.277208853', '');                              // Additional Variable 2 (empty placeholder)
+    formData.append('entry.339118186', '');                              // Additional Variable 3 (empty placeholder)
+    formData.append('entry.1282609887', '');                             // Additional Variable 4 (empty placeholder)
 
     fetch('https://docs.google.com/forms/d/e/1FAIpQLSfYQ01gwvUhKz9CIfgJZKD2gJ-LNJMhNl6_z5Miez9ai6sO5g/formResponse', {
       method: 'POST',
       mode: 'no-cors',
       body: formData
     })
-    .then(() => console.log('✅ Trial uploaded to Form'))
+    .then(() => console.log(`✅ Trial ${i + 1} uploaded to Form`))
     .catch(error => console.error('❌ Upload failed:', error));
   });
 }
-
 
 // ==========================
 // ✔ END of addition
