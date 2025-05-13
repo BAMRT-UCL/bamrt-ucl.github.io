@@ -200,11 +200,12 @@ function sendDataToForm(trials) {
     formData.append('entry.1393484340', ''); // Additional Var 3
     formData.append('entry.1501785385', ''); // Additional Var 4
 
-    fetch('https://docs.google.com/forms/d/e/1FAIpQLSfYQ01gwvUhKz9CIfgJZKD2gJ-LNJMhNl6_z5Miez9ai6sO5g/formResponse', {
-        method: 'POST',
-        mode: 'no-cors',
-        body: formData
-    })
+   fetch('https://docs.google.com/forms/u/0/d/e/1FAIpQLScAPwRBzflFbnWjK4RZc2SXziBHBBHIkXStjs_slV3qGXs7vQ/formResponse', {
+    method: 'POST',
+    mode: 'no-cors',
+    body: formData
+})
+
     .then(() => console.log('✅ All trials uploaded in JSON string + placeholders'))
     .catch(error => console.error('❌ Upload failed:', error));
 }
