@@ -3,72 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mental Rotation Task</title>
+  <title>Combined NLE + BAMRT Task</title>
   <style>
     body { font-family: Arial; text-align: center; padding: 2em; background: #f5f5f5; }
-    img { width: 300px; height: auto; margin: 1em; }
-    .button-container button { padding: 1em 2em; font-size: 1.2em; margin: 1em; }
-    table { margin: 2em auto; border-collapse: collapse; }
-    td, th { border: 1px solid #ccc; padding: 0.5em; }
-    th { background: #eee; }
+    button { padding: 1em 2em; font-size: 1.2em; margin: 1em; }
+    select, input { padding: 0.5em; font-size: 1em; margin: 0.5em; }
   </style>
 </head>
 <body>
-  <h1>Mental Rotation Task</h1>
-
-  <!-- Setup Section -->
-  <div id="setup-container">
-    <label>Participant ID: <input type="text" id="participantId" /></label><br />
-    <label>Year Group:
-      <select id="yearGroup">
-        <option value="1">Year 1</option>
-        <option value="2">Year 2</option>
-        <option value="3">Year 3</option>
-        <option value="4">Year 4</option>
-        <option value="5">Year 5</option>
-        <option value="6">Year 6</option>
-      </select>
-    </label><br />
-    <button id="startButton" onclick="startTask()">Start Task</button>
-  </div>
-
-<!-- Trial Section -->
-<div id="taskContainer" style="display: none;">
-  <div id="trial-container">
-    <p>Trial: <span id="trialNumber"></span></p>
-	<p>Difficulty: <span id="difficultyNumber"></span></p>   <!-- NEW -->
-<div id="progressBar" style="width: 80%; height: 20px; margin: 1em auto; background: #ddd;">
-  <div id="progressFill" style="height: 100%; width: 0%; background: #4caf50;"></div>
-</div>
-
-    <img id="image1" src="" alt="Base Image" />
-    <img id="image2" src="" alt="Comparison Image" />
-    <div class="button-container">
-      <button onclick="submitResponse(true)">Same</button>
-      <button onclick="submitResponse(false)">Different</button>
-    </div>
-  </div>
-</div>
-
-  <!-- Results Section -->
-  <div id="resultsSection" style="display: none;">
-    <h2>Task Complete!</h2>
-    <label>
-      <input type="checkbox" id="showResultsToggle" onchange="toggleResults()" />
-      Show Results
-    </label><br />
-    <button onclick="downloadResults()">Download Results</button>
-    <table id="resultsTable" style="display: none;">
-      <thead>
-        <tr>
-          <th>Trial</th><th>Base Image</th><th>Comparison Image</th><th>Correct</th><th>Difficulty</th><th>Theta</th><th>Variance</th><th>Info</th><th>Time (s)</th>
-        </tr>
-      </thead>
-      <tbody id="resultsBody"></tbody>
-    </table>
-  </div>
-<div id="theta-display" style="display: none; margin-top: 1em; font-size: 1.2em;"></div>
-  <script src="task.js?v=005"></script>
-
+  <!-- The controller will overwrite body when loaded -->
+  <script src="controller.js"></script>
+  <script src="nle_task.js"></script>
+  <script src="bamrt_task.js"></script>
 </body>
 </html>
