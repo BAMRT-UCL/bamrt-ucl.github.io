@@ -166,3 +166,5 @@ function startBAMRT(participantId, yearGroup) {
 
     fetchTrialsAndStart();
 }
+    }
+}
