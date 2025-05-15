@@ -165,4 +165,5 @@ function endTask() {
 
     if (typeof callback === 'function') callback(estimates);
 }
+window.startNLE = startNLE;
 
