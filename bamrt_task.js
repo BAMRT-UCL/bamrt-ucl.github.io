@@ -1,5 +1,5 @@
 function startBAMRT(participantId, yearGroup) {
-	console.log(`[BAMRT v001] Starting task for ${participantId}, Year ${yearGroup}`);
+	console.log(`[BAMRT v002] Starting task for ${participantId}, Year ${yearGroup}`);
 
 
     let trials = [];
