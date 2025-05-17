@@ -5,7 +5,7 @@ function startCombinedTask() {
         console.log('✅ NLE task complete, starting BAMRT...');
         startBAMRT(participantID, yearGroup);
         window.controllerBAMRTCallback = (bamrtData) => {
-        console.log('[Controller v003] Starting Combined Task...');
+        console.log('[Controller v004] Starting Combined Task...');
 		console.log('[Controller] Starting NLE Only...');
 		console.log('[Controller] Starting BAMRT Only...');
 

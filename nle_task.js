@@ -1,5 +1,5 @@
 function startNLE(participantId, yearGroup) {
-    console.log(`[NLE v003] Starting task for ${participantId}, Year ${yearGroup}`);
+    console.log(`[NLE v004] Starting task for ${participantId}, Year ${yearGroup}`);
 
 
     document.body.innerHTML = `
@@ -142,33 +142,38 @@ function startNLE(participantId, yearGroup) {
         }
     });
 
-function endTask() {
-	console.log('Task completed, uploading results.');
-    document.body.innerHTML = '<h2>Task Completed. Uploading results...</h2>';
-    
-    // Automatic upload like BAMRT
-    var formData = new FormData();
-    formData.append('entry.713541064', participantID);
-    formData.append('entry.796534484', yearGroup);
-    formData.append('entry.569501423', new Date().toISOString());
-    formData.append('entry.187358765', JSON.stringify(estimates));
-    formData.append('entry.695655106', '');
-    formData.append('entry.590241153', '');
-    formData.append('entry.1393484340', '');
-    formData.append('entry.1501785385', '');
+    drawNumberLine();
+    displayTargetNumber();
+    resizeCanvas();
 
-    fetch('https://docs.google.com/forms/u/0/d/e/1FAIpQLScAPwRBzflFbnWjK4RZc2SXziBHBBHIkXStjs_slV3qGXs7vQ/formResponse', {
-        method: 'POST',
-        mode: 'no-cors',
-        body: formData
-    })
-    .then(() => console.log('✅ NLE trials uploaded to Form'))
-    .catch(error => console.error('❌ Upload failed:', error));
+    function endTask() {
+        console.log('Task completed, uploading results.');
+        document.body.innerHTML = '<h2>Task Completed. Uploading results...</h2>';
+        
+        var formData = new FormData();
+        formData.append('entry.713541064', participantID);
+        formData.append('entry.796534484', yearGroup);
+        formData.append('entry.569501423', new Date().toISOString());
+        formData.append('entry.187358765', JSON.stringify(estimates));
+        formData.append('entry.695655106', '');
+        formData.append('entry.590241153', '');
+        formData.append('entry.1393484340', '');
+        formData.append('entry.1501785385', '');
+
+        fetch('https://docs.google.com/forms/u/0/d/e/1FAIpQLScAPwRBzflFbnWjK4RZc2SXziBHBBHIkXStjs_slV3qGXs7vQ/formResponse', {
+            method: 'POST',
+            mode: 'no-cors',
+            body: formData
+        })
+        .then(() => {
+            console.log('✅ NLE trials uploaded to Form');
+            document.body.innerHTML = '<h2>Thanks! Your results have been submitted.</h2>';
+        })
+        .catch(error => console.error('❌ Upload failed:', error));
 
         if (typeof callback === 'function') callback(estimates);
-}
+    }
 
-} // ← closes startNLE
+} // closes startNLE
+
 window.startNLE = startNLE;
-
-
