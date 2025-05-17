@@ -1,5 +1,6 @@
 function startBAMRT(participantId, yearGroup) {
-    console.log(`Starting BAMRT Task for ${participantId}, Year ${yearGroup}`);
+	console.log(`[BAMRT v001] Starting task for ${participantId}, Year ${yearGroup}`);
+
 
     let trials = [];
     let availableIndices = [];
@@ -155,15 +156,17 @@ function startBAMRT(participantId, yearGroup) {
         showTrial();
     }
 
-    function endTask() {
-        document.body.innerHTML = '<h2>BAMRT Task Complete. Uploading results...</h2>';
-        if (typeof window.controllerBAMRTCallback === 'function') {
-            window.controllerBAMRTCallback(trialHistory);
-        } else {
-            console.warn('No controller callback found for BAMRT');
-        }
+  function endTask() {
+    console.log(`[BAMRT v001] Task completed, uploading results.`);
+    document.body.innerHTML = '<h2>BAMRT Task Complete. Uploading results...</h2>';
+    if (typeof window.controllerBAMRTCallback === 'function') {
+        window.controllerBAMRTCallback(trialHistory);
+    } else {
+        console.warn('[BAMRT v001] No controller callback found for BAMRT');
     }
+}
 
-    fetchTrialsAndStart();
+fetchTrialsAndStart();
+
 }
 

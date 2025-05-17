@@ -5,9 +5,10 @@ function startCombinedTask() {
         console.log('✅ NLE task complete, starting BAMRT...');
         startBAMRT(participantID, yearGroup);
         window.controllerBAMRTCallback = (bamrtData) => {
-            console.log('✅ BAMRT complete.');
-            console.log('--- NLE Data:', nleData);
-            console.log('--- BAMRT Data:', bamrtData);
+        console.log('[Controller v001] Starting Combined Task...');
+		console.log('[Controller] Starting NLE Only...');
+		console.log('[Controller] Starting BAMRT Only...');
+
             alert('Combined Task Complete. Data logged to console.');
         };
     });

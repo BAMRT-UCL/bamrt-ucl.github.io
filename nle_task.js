@@ -1,5 +1,6 @@
 function startNLE(participantId, yearGroup) {
-    console.log(`Starting NLE Task for ${participantId}, Year ${yearGroup}`);
+    console.log(`[NLE v001] Starting task for ${participantId}, Year ${yearGroup}`);
+
 
     document.body.innerHTML = `
       <h1>Number Line Estimation Task</h1>
@@ -142,6 +143,7 @@ function startNLE(participantId, yearGroup) {
     });
 
 function endTask() {
+	console.log('Task completed, uploading results.');
     document.body.innerHTML = '<h2>Task Completed. Uploading results...</h2>';
     
     // Automatic upload like BAMRT
