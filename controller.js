@@ -1,11 +1,12 @@
 function startCombinedTask() {
     document.body.innerHTML = '<h2>Starting Combined Task...</h2>';
     // Start NLE first, and when done, start BAMRT
-    startNLE((nleData) => {
+		startNLE(participantID, yearGroup, (nleData) => {
+
         console.log('✅ NLE task complete, starting BAMRT...');
         startBAMRT(participantID, yearGroup);
         window.controllerBAMRTCallback = (bamrtData) => {
-        console.log('[Controller v004] Starting Combined Task...');
+        console.log('[Controller v005] Starting Combined Task...');
 		console.log('[Controller] Starting NLE Only...');
 		console.log('[Controller] Starting BAMRT Only...');
 

@@ -1,5 +1,5 @@
-function startNLE(participantId, yearGroup) {
-    console.log(`[NLE v004] Starting task for ${participantId}, Year ${yearGroup}`);
+function startNLE(participantId, yearGroup, callback) {
+    console.log(`[NLE v005] Starting task for ${participantId}, Year ${yearGroup}`);
 
 
     document.body.innerHTML = `
