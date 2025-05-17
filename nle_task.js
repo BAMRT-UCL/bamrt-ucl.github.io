@@ -1,5 +1,5 @@
 function startNLE(participantId, yearGroup) {
-    console.log(`[NLE v002] Starting task for ${participantId}, Year ${yearGroup}`);
+    console.log(`[NLE v003] Starting task for ${participantId}, Year ${yearGroup}`);
 
 
     document.body.innerHTML = `
@@ -165,7 +165,10 @@ function endTask() {
     .then(() => console.log('✅ NLE trials uploaded to Form'))
     .catch(error => console.error('❌ Upload failed:', error));
 
-    if (typeof callback === 'function') callback(estimates);
+        if (typeof callback === 'function') callback(estimates);
 }
+
+} // ← closes startNLE
 window.startNLE = startNLE;
+
 
