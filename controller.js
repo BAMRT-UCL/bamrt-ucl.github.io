@@ -1,28 +1,33 @@
 function startCombinedTask() {
     document.body.innerHTML = '<h2>Starting Combined Task...</h2>';
+    
     // Start NLE first, and when done, start BAMRT
-		startNLE(participantID, yearGroup, (nleData) => {
-
+    startNLE(participantID, yearGroup, (nleData) => {
         console.log('✅ NLE task complete, starting BAMRT...');
-        startBAMRT(participantID, yearGroup);
-        window.controllerBAMRTCallback = (bamrtData) => {
-        console.log('[Controller v005] Starting Combined Task...');
-		console.log('[Controller] Starting NLE Only...');
-		console.log('[Controller] Starting BAMRT Only...');
 
+        // ✅ Set callback BEFORE launching BAMRT
+        window.controllerBAMRTCallback = (bamrtData) => {
+            console.log('[Controller v006] Starting Combined Task...');
+            console.log('[Controller] Starting NLE Only...');
+            console.log('[Controller] Starting BAMRT Only...');
             alert('Combined Task Complete. Data logged to console.');
         };
+
+        // ✅ Launch BAMRT after callback is in place
+        startBAMRT(participantID, yearGroup);
     });
 }
 
+
 function startNLEOnly() {
     document.body.innerHTML = '<h2>Starting NLE Only...</h2>';
-    startNLE((nleData) => {
+    startNLE(participantID, yearGroup, (nleData) => {
         console.log('✅ NLE task complete.');
         console.log(nleData);
         alert('NLE Task Complete. Data logged to console.');
     });
 }
+
 
 function startBAMRTOnly() {
     document.body.innerHTML = '<h2>Starting BAMRT Only...</h2>';
