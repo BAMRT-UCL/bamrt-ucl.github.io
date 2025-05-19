@@ -3,7 +3,7 @@ function startCombinedTask() {
     document.body.innerHTML = '<h2>Starting Combined Task...</h2>';
 
     startNLE(participantID, yearGroup, (nleData) => {
-        console.log('[Controller v007] ✅ NLE task complete.');
+        console.log('[Controller v009] ✅ NLE task complete.');
 
         // Show a transition page
         document.body.innerHTML = `
@@ -14,15 +14,19 @@ function startCombinedTask() {
         `;
 
         // Wait for participant to click to begin BAMRT
-        document.getElementById('continueToBamrtBtn').onclick = () => {
-            console.log('[Controller v007] 🚀 Starting BAMRT...');
-            window.controllerBAMRTCallback = (bamrtData) => {
-                console.log('[Controller v007] ✅ BAMRT complete.');
-                alert('Both tasks complete. Thank you!');
-            };
+		document.getElementById('continueToBamrtBtn').onclick = () => {
+		console.log('[Controller v007] 🚀 Starting BAMRT...');
+		window.controllerBAMRTCallback = (bamrtData) => {
+        console.log('[Controller v007] ✅ BAMRT complete.');
+        alert('Both tasks complete. Thank you!');
+    };
 
-            startBAMRT(participantID, yearGroup);
-        };
+    // ✅ Delay the BAMRT start to avoid DOM collision
+    setTimeout(() => {
+        startBAMRT(participantID, yearGroup);
+    }, 0);
+};
+
     });
 }
 
