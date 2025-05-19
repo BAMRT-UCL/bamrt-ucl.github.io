@@ -1,6 +1,5 @@
 function startBAMRT(participantId, yearGroup) {
-	console.log(`[BAMRT v007] Starting task for ${participantId}, Year ${yearGroup}`);
-
+    console.log(`[BAMRT v009] Starting task for ${participantId}, Year ${yearGroup}`);
 
     let trials = [];
     let availableIndices = [];
@@ -56,27 +55,28 @@ function startBAMRT(participantId, yearGroup) {
         return thetaGrid.reduce((sum, th, i) => sum + posterior[i] * (th - mean) ** 2, 0);
     }
 
-    // DOM SETUP
-    document.body.innerHTML = `
-        <div id="taskContainer">
-            <div id="trial-container">
-                <p>Trial: <span id="trialNumber"></span></p>
-                <p>Difficulty: <span id="difficultyNumber"></span></p>
-                <div id="progressBar" style="width: 80%; height: 20px; margin: 1em auto; background: #ddd;">
-                    <div id="progressFill" style="height: 100%; width: 0%; background: #4caf50;"></div>
-                </div>
-                <img id="image1" src="" alt="Base Image" />
-                <img id="image2" src="" alt="Comparison Image" />
-                <div class="button-container">
-                    <button id="sameButton">Same</button>
-                    <button id="differentButton">Different</button>
+    function setupDOM() {
+        document.body.innerHTML = `
+            <div id="taskContainer">
+                <div id="trial-container">
+                    <p>Trial: <span id="trialNumber"></span></p>
+                    <p>Difficulty: <span id="difficultyNumber"></span></p>
+                    <div id="progressBar" style="width: 80%; height: 20px; margin: 1em auto; background: #ddd;">
+                        <div id="progressFill" style="height: 100%; width: 0%; background: #4caf50;"></div>
+                    </div>
+                    <img id="image1" src="" alt="Base Image" />
+                    <img id="image2" src="" alt="Comparison Image" />
+                    <div class="button-container">
+                        <button id="sameButton">Same</button>
+                        <button id="differentButton">Different</button>
+                    </div>
                 </div>
             </div>
-        </div>
-    `;
+        `;
 
-    document.getElementById('sameButton').onclick = () => submitResponse(true);
-    document.getElementById('differentButton').onclick = () => submitResponse(false);
+        document.getElementById('sameButton').onclick = () => submitResponse(true);
+        document.getElementById('differentButton').onclick = () => submitResponse(false);
+    }
 
     function fetchTrialsAndStart() {
         fetch("bamrt_trials.json")
@@ -131,49 +131,46 @@ function startBAMRT(participantId, yearGroup) {
         trialStartTime = Date.now();
     }
 
-function submitResponse(chosenSame) {
-    if (currentIndex === -1) return;
+    function submitResponse(chosenSame) {
+        if (currentIndex === -1) return;
 
-    const t = trials[currentIndex];
-    
-    // ✅ Corrected logic: answer is correct if "Same" and not mirrored, or "Different" and mirrored
-    const isCorrect = (chosenSame === !t.mirrored);
+        const t = trials[currentIndex];
+        const isCorrect = (chosenSame === !t.mirrored);
+        console.log(`🧪 Trial ${trialHistory.length + 1} — Chose: ${chosenSame}, Mirrored: ${t.mirrored}, Correct: ${isCorrect}`);
 
-    // ✅ Optional debug line (can remove later)
-    console.log(`🧪 Trial ${trialHistory.length + 1} — Chose: ${chosenSame}, Mirrored: ${t.mirrored}, Correct: ${isCorrect}`);
+        const responseTime = (Date.now() - trialStartTime) / 1000;
 
-    const responseTime = (Date.now() - trialStartTime) / 1000;
+        updatePosterior(isCorrect, t.difficulty);
 
-    updatePosterior(isCorrect, t.difficulty);
+        trialHistory.push({
+            trial: trialHistory.length + 1,
+            base: t.base_image,
+            comp: t.comparison_image,
+            correct: isCorrect ? "Yes" : "No",
+            difficulty: t.difficulty,
+            theta: posteriorMean().toFixed(2),
+            variance: posteriorVariance().toFixed(2),
+            info: expectedFisherInfo(currentIndex).toFixed(2),
+            rt: responseTime.toFixed(2)
+        });
 
-    trialHistory.push({
-        trial: trialHistory.length + 1,
-        base: t.base_image,
-        comp: t.comparison_image,
-        correct: isCorrect ? "Yes" : "No",
-        difficulty: t.difficulty,
-        theta: posteriorMean().toFixed(2),
-        variance: posteriorVariance().toFixed(2),
-        info: expectedFisherInfo(currentIndex).toFixed(2),
-        rt: responseTime.toFixed(2)
-    });
-
-    availableIndices = availableIndices.filter(i => i !== currentIndex);
-    showTrial();
-}
-
-
-  function endTask() {
-    console.log(`[BAMRT v001] Task completed, uploading results.`);
-    document.body.innerHTML = '<h2>BAMRT Task Complete. Uploading results...</h2>';
-    if (typeof window.controllerBAMRTCallback === 'function') {
-        window.controllerBAMRTCallback(trialHistory);
-    } else {
-        console.warn('[BAMRT v001] No controller callback found for BAMRT');
+        availableIndices = availableIndices.filter(i => i !== currentIndex);
+        showTrial();
     }
+
+    function endTask() {
+        console.log(`[BAMRT v008] Task completed, uploading results.`);
+        document.body.innerHTML = '<h2>BAMRT Task Complete. Uploading results...</h2>';
+        if (typeof window.controllerBAMRTCallback === 'function') {
+            window.controllerBAMRTCallback(trialHistory);
+        } else {
+            console.warn('[BAMRT v008] No controller callback found for BAMRT');
+        }
+    }
+
+    setupDOM();
+    fetchTrialsAndStart();
 }
 
-fetchTrialsAndStart();
-
-}
-
+// ✅ Only register global launcher — don’t auto-run
+window.bamrtInternalStart = startBAMRT;
