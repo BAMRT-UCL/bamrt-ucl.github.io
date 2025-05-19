@@ -1,11 +1,11 @@
 function startCombinedTask() {
-    console.log('[Controller v008] Starting Combined Task...');
+    console.log('[Controller v010] Starting Combined Task...');
     document.body.innerHTML = '<h2>Starting Combined Task...</h2>';
 
     startNLE(participantID, yearGroup, (nleData) => {
         console.log('[Controller v009] ✅ NLE task complete.');
 
-        // Show a transition page
+        // Show transition page
         document.body.innerHTML = `
             <h2>Great job!</h2>
             <p>You’ve completed the first task.</p>
@@ -13,22 +13,21 @@ function startCombinedTask() {
             <button id="continueToBamrtBtn">Start Mental Rotation Task</button>
         `;
 
-        // Wait for participant to click to begin BAMRT
-		document.getElementById('continueToBamrtBtn').onclick = () => {
-		console.log('[Controller v007] 🚀 Starting BAMRT...');
-		window.controllerBAMRTCallback = (bamrtData) => {
-        console.log('[Controller v007] ✅ BAMRT complete.');
-        alert('Both tasks complete. Thank you!');
-    };
-
-    // ✅ Delay the BAMRT start to avoid DOM collision
-    setTimeout(() => {
-        startBAMRT(participantID, yearGroup);
-    }, 0);
-};
-
+        // Phase 1: Setup listener (this won't start the task)
+        document.getElementById('continueToBamrtBtn').addEventListener('click', () => {
+            console.log('[Controller v009] 👆 BAMRT launch requested...');
+            // Phase 2: Now delay actual launch until next event loop
+            requestAnimationFrame(() => {
+                window.controllerBAMRTCallback = (bamrtData) => {
+                    console.log('[Controller v009] ✅ BAMRT complete.');
+                    alert('Both tasks complete. Thank you!');
+                };
+                startBAMRT(participantID, yearGroup);
+            });
+        });
     });
 }
+
 
 function startNLEOnly() {
     document.body.innerHTML = '<h2>Starting NLE Only...</h2>';
