@@ -1,9 +1,9 @@
 function startCombinedTask() {
-    console.log('[Controller v007] Starting Combined Task...');
+    console.log('[Controller v008] Starting Combined Task...');
     document.body.innerHTML = '<h2>Starting Combined Task...</h2>';
 
     startNLE(participantID, yearGroup, (nleData) => {
-        console.log('[Controller v006] ✅ NLE task complete.');
+        console.log('[Controller v007] ✅ NLE task complete.');
 
         // Show a transition page
         document.body.innerHTML = `
@@ -15,9 +15,9 @@ function startCombinedTask() {
 
         // Wait for participant to click to begin BAMRT
         document.getElementById('continueToBamrtBtn').onclick = () => {
-            console.log('[Controller v006] 🚀 Starting BAMRT...');
+            console.log('[Controller v007] 🚀 Starting BAMRT...');
             window.controllerBAMRTCallback = (bamrtData) => {
-                console.log('[Controller v006] ✅ BAMRT complete.');
+                console.log('[Controller v007] ✅ BAMRT complete.');
                 alert('Both tasks complete. Thank you!');
             };
 
@@ -25,9 +25,6 @@ function startCombinedTask() {
         };
     });
 }
-
-
-
 
 function startNLEOnly() {
     document.body.innerHTML = '<h2>Starting NLE Only...</h2>';
@@ -37,7 +34,6 @@ function startNLEOnly() {
         alert('NLE Task Complete. Data logged to console.');
     });
 }
-
 
 function startBAMRTOnly() {
     document.body.innerHTML = '<h2>Starting BAMRT Only...</h2>';
@@ -104,4 +100,3 @@ function setupAndStartBAMRT() {
 }
 
 window.addEventListener('DOMContentLoaded', showStartMenu);
-
