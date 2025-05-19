@@ -1,22 +1,32 @@
 function startCombinedTask() {
+    console.log('[Controller v007] Starting Combined Task...');
     document.body.innerHTML = '<h2>Starting Combined Task...</h2>';
-    
-    // Start NLE first, and when done, start BAMRT
+
     startNLE(participantID, yearGroup, (nleData) => {
-        console.log('✅ NLE task complete, starting BAMRT...');
+        console.log('[Controller v006] ✅ NLE task complete.');
 
-        // ✅ Set callback BEFORE launching BAMRT
-        window.controllerBAMRTCallback = (bamrtData) => {
-            console.log('[Controller v006] Starting Combined Task...');
-            console.log('[Controller] Starting NLE Only...');
-            console.log('[Controller] Starting BAMRT Only...');
-            alert('Combined Task Complete. Data logged to console.');
+        // Show a transition page
+        document.body.innerHTML = `
+            <h2>Great job!</h2>
+            <p>You’ve completed the first task.</p>
+            <p>Click the button below when you're ready to begin the next task.</p>
+            <button id="continueToBamrtBtn">Start Mental Rotation Task</button>
+        `;
+
+        // Wait for participant to click to begin BAMRT
+        document.getElementById('continueToBamrtBtn').onclick = () => {
+            console.log('[Controller v006] 🚀 Starting BAMRT...');
+            window.controllerBAMRTCallback = (bamrtData) => {
+                console.log('[Controller v006] ✅ BAMRT complete.');
+                alert('Both tasks complete. Thank you!');
+            };
+
+            startBAMRT(participantID, yearGroup);
         };
-
-        // ✅ Launch BAMRT after callback is in place
-        startBAMRT(participantID, yearGroup);
     });
 }
+
+
 
 
 function startNLEOnly() {
