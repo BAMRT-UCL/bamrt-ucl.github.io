@@ -1,32 +1,46 @@
 function startCombinedTask() {
-    console.log('[Controller v010] Starting Combined Task...');
+    console.log('[Controller v011] Starting Combined Task...');
     document.body.innerHTML = '<h2>Starting Combined Task...</h2>';
 
     startNLE(participantID, yearGroup, (nleData) => {
-        console.log('[Controller v009] ✅ NLE task complete.');
+        console.log('[Controller v011] ✅ NLE task complete.');
 
-        // Show transition page
-        document.body.innerHTML = `
-            <h2>Great job!</h2>
-            <p>You’ve completed the first task.</p>
-            <p>Click the button below when you're ready to begin the next task.</p>
-            <button id="continueToBamrtBtn">Start Mental Rotation Task</button>
+        // Set up transition screen with stable layout
+        const transitionHTML = `
+            <div style="padding: 2em; text-align: center;">
+                <h2>Great job!</h2>
+                <p>You’ve completed the first task.</p>
+                <p>Click the button below when you're ready to begin the next task.</p>
+                <button id="continueToBamrtBtn" style="font-size: 1.5em; padding: 0.8em 2em; margin-top: 1em;">Start Mental Rotation Task</button>
+            </div>
         `;
+        document.body.innerHTML = transitionHTML;
 
-        // Phase 1: Setup listener (this won't start the task)
-        document.getElementById('continueToBamrtBtn').addEventListener('click', () => {
-            console.log('[Controller v009] 👆 BAMRT launch requested...');
-            // Phase 2: Now delay actual launch until next event loop
-            requestAnimationFrame(() => {
-                window.controllerBAMRTCallback = (bamrtData) => {
-                    console.log('[Controller v009] ✅ BAMRT complete.');
-                    alert('Both tasks complete. Thank you!');
-                };
-                startBAMRT(participantID, yearGroup);
-            });
+        // Double-log render confirmation
+        console.log('[Controller v011] Transition screen shown');
+
+        const btn = document.getElementById('continueToBamrtBtn');
+
+        if (!btn) {
+            console.error('[Controller v011] ❌ Button not found. Something overwrote DOM.');
+            return;
+        }
+
+        btn.addEventListener('click', () => {
+            console.log('[Controller v011] 👆 BAMRT button clicked — launching task...');
+
+            // Set callback handler BEFORE launching
+            window.controllerBAMRTCallback = (bamrtData) => {
+                console.log('[Controller v011] ✅ BAMRT complete.');
+                alert('Both tasks complete. Thank you!');
+            };
+
+            // Launch BAMRT
+            startBAMRT(participantID, yearGroup);
         });
     });
 }
+
 
 
 function startNLEOnly() {
