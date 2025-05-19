@@ -1,5 +1,20 @@
-function startBAMRT(participantId, yearGroup) {
-    console.log(`[BAMRT v009] Starting task for ${participantId}, Year ${yearGroup}`);
+window.startBAMRT = function(participantId, yearGroup) {
+    try {
+        console.log(`[BAMRT WRAPPER] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
+        if (!participantId || !yearGroup) {
+            console.error('[BAMRT WRAPPER] ❌ Missing participantId or yearGroup');
+        }
+        internalStartBAMRT(participantId, yearGroup);
+    } catch (err) {
+        console.error('[BAMRT WRAPPER] ❌ Error launching BAMRT:', err);
+        document.body.innerHTML = `<h2>Something went wrong starting the BAMRT task.</h2><p>${err.message}</p>`;
+    }
+};
+
+
+function internalStartBAMRT(participantId, yearGroup) {
+
+    console.log(`[BAMRT v010] Starting task for ${participantId}, Year ${yearGroup}`);
 
     let trials = [];
     let availableIndices = [];
