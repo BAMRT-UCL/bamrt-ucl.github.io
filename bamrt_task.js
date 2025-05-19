@@ -1,5 +1,5 @@
 function startBAMRT(participantId, yearGroup) {
-	console.log(`[BAMRT v006] Starting task for ${participantId}, Year ${yearGroup}`);
+	console.log(`[BAMRT v007] Starting task for ${participantId}, Year ${yearGroup}`);
 
 
     let trials = [];
@@ -131,30 +131,37 @@ function startBAMRT(participantId, yearGroup) {
         trialStartTime = Date.now();
     }
 
-    function submitResponse(chosenSame) {
-        if (currentIndex === -1) return;
+function submitResponse(chosenSame) {
+    if (currentIndex === -1) return;
 
-        const t = trials[currentIndex];
-        const isCorrect = chosenSame !== t.mirrored;
-        const responseTime = (Date.now() - trialStartTime) / 1000;
+    const t = trials[currentIndex];
+    
+    // ✅ Corrected logic: answer is correct if "Same" and not mirrored, or "Different" and mirrored
+    const isCorrect = (chosenSame === !t.mirrored);
 
-        updatePosterior(isCorrect, t.difficulty);
+    // ✅ Optional debug line (can remove later)
+    console.log(`🧪 Trial ${trialHistory.length + 1} — Chose: ${chosenSame}, Mirrored: ${t.mirrored}, Correct: ${isCorrect}`);
 
-        trialHistory.push({
-            trial: trialHistory.length + 1,
-            base: t.base_image,
-            comp: t.comparison_image,
-            correct: isCorrect ? "Yes" : "No",
-            difficulty: t.difficulty,
-            theta: posteriorMean().toFixed(2),
-            variance: posteriorVariance().toFixed(2),
-            info: expectedFisherInfo(currentIndex).toFixed(2),
-            rt: responseTime.toFixed(2)
-        });
+    const responseTime = (Date.now() - trialStartTime) / 1000;
 
-        availableIndices = availableIndices.filter(i => i !== currentIndex);
-        showTrial();
-    }
+    updatePosterior(isCorrect, t.difficulty);
+
+    trialHistory.push({
+        trial: trialHistory.length + 1,
+        base: t.base_image,
+        comp: t.comparison_image,
+        correct: isCorrect ? "Yes" : "No",
+        difficulty: t.difficulty,
+        theta: posteriorMean().toFixed(2),
+        variance: posteriorVariance().toFixed(2),
+        info: expectedFisherInfo(currentIndex).toFixed(2),
+        rt: responseTime.toFixed(2)
+    });
+
+    availableIndices = availableIndices.filter(i => i !== currentIndex);
+    showTrial();
+}
+
 
   function endTask() {
     console.log(`[BAMRT v001] Task completed, uploading results.`);
