@@ -1,3 +1,5 @@
+/* controller.js */              /* pick any version tag you like */
+console.log('[Controller v017] script loaded');
 
 let participantID = '';
 let yearGroup = '';
@@ -58,29 +60,52 @@ function startBAMRTOnly() {
 }
 
 function showStartMenu() {
-    const disableNLE = nleCompleted ? 'disabled' : '';
+
+    /* ----------  final thank-you ---------- */
+    if (nleCompleted && bamrtCompleted) {
+        document.body.innerHTML = `
+           <div style="text-align:center">
+               <img src="images/ucl_logo.png"
+                    alt="UCL logo"
+                    style="max-width:200px;margin:1em auto;">
+               <h2>All tasks complete – thank you!</h2>
+           </div>`;
+        return;                      // nothing else to render
+    }
+
+    /* ----------  menu with logo ---------- */
+    const disableNLE   = nleCompleted   ? 'disabled' : '';
     const disableBAMRT = bamrtCompleted ? 'disabled' : '';
 
     document.body.innerHTML = `
-        <h1>Combined Tasks Menu</h1>
-        <label>Participant ID:
-            <input type="text" id="participantId" value="${participantID}" ${participantID ? 'readonly' : ''} />
-        </label><br/>
-        <label>Year Group:
-            <select id="yearGroup" ${participantID ? 'disabled' : ''}>
-                <option value="1" ${yearGroup === '1' ? 'selected' : ''}>Year 1</option>
-                <option value="2" ${yearGroup === '2' ? 'selected' : ''}>Year 2</option>
-                <option value="3" ${yearGroup === '3' ? 'selected' : ''}>Year 3</option>
-                <option value="4" ${yearGroup === '4' ? 'selected' : ''}>Year 4</option>
-                <option value="5" ${yearGroup === '5' ? 'selected' : ''}>Year 5</option>
-                <option value="6" ${yearGroup === '6' ? 'selected' : ''}>Year 6</option>
-            </select>
-        </label><br/>
+        <div style="text-align:center">
+            <img src="images/ucl_logo.png"
+                 alt="UCL logo"
+                 style="max-width:200px;margin:1em auto;">
+            <h1>Tasks Menu</h1>
 
-        <button onclick="setupAndStartNLE()" ${disableNLE}>Start NLE Only</button>
-        <button onclick="setupAndStartBAMRT()" ${disableBAMRT}>Start BAMRT Only</button>
-    `;
+            <label>Participant ID:
+                <input type="text" id="participantId"
+                       value="${participantID}"
+                       ${participantID ? 'readonly' : ''}>
+            </label><br/>
+
+            <label>Year Group:
+                <select id="yearGroup" ${participantID ? 'disabled' : ''}>
+                    <option value="1" ${yearGroup === '1' ? 'selected' : ''}>Year&nbsp;1</option>
+                    <option value="2" ${yearGroup === '2' ? 'selected' : ''}>Year&nbsp;2</option>
+                    <option value="3" ${yearGroup === '3' ? 'selected' : ''}>Year&nbsp;3</option>
+                    <option value="4" ${yearGroup === '4' ? 'selected' : ''}>Year&nbsp;4</option>
+                    <option value="5" ${yearGroup === '5' ? 'selected' : ''}>Year&nbsp;5</option>
+                    <option value="6" ${yearGroup === '6' ? 'selected' : ''}>Year&nbsp;6</option>
+                </select>
+            </label><br/><br/>
+
+            <button onclick="setupAndStartNLE()"   ${disableNLE}>Start NLE</button>
+            <button onclick="setupAndStartBAMRT()" ${disableBAMRT}>Start Mental Rotation</button>
+        </div>`;
 }
+
 
 function setupAndStartCombined() {
     participantID = document.getElementById('participantId').value.trim();

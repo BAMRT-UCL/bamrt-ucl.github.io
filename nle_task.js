@@ -1,5 +1,5 @@
 window.startNLE = function(participantID, yearGroup, callback) {
-    console.log(`[NLE v007] Starting task for ${participantID}, Year ${yearGroup}`);
+    console.log(`[NLE v008] Starting task for ${participantID}, Year ${yearGroup}`);
 
     document.body.innerHTML = `
       <h1>Number Line Estimation Task</h1>
