@@ -1,10 +1,9 @@
-/**
- * =========================================================
- * Combined flow: NLE  →  “Ready?” screen  →  BAMRT
- * =========================================================
- */
 
-/* helper: draw the transition screen ver015*/
+let participantID = '';
+let yearGroup = '';
+let nleCompleted = false;
+let bamrtCompleted = false;
+
 function showTransitionAfterNLE() {
     document.body.innerHTML = `
       <h2>Great job!</h2>
@@ -15,29 +14,24 @@ function showTransitionAfterNLE() {
       <button id="startBamrtBtn">Start Mental Rotation Task</button>
     `;
 
-    /* launch BAMRT when the participant clicks */
     document.getElementById('startBamrtBtn').addEventListener('click', () => {
         console.log('[Controller] ▶ Starting BAMRT…');
         window.bamrtInternalStart(participantID, yearGroup);
     });
 }
 
-/* main entry-point called from the menu */
 function startCombinedTask() {
     console.log('[Controller] ▶ Starting combined flow');
     document.body.innerHTML = '<h2>Number-Line Task loading…</h2>';
 
-    /* run NLE first */
     startNLE(participantID, yearGroup, (nleData) => {
         console.log('[Controller] ✅ NLE finished');
-        /* draw the transition screen */
         showTransitionAfterNLE();
 
-        /* set up what happens when BAMRT ends */
         window.controllerBAMRTCallback = (bamrtData) => {
             console.log('[Controller] ✅ BAMRT finished');
             alert('Both tasks complete – thank you!');
-            showStartMenu();          // back to landing page
+            showStartMenu();
         };
     });
 }
@@ -47,7 +41,8 @@ function startNLEOnly() {
     startNLE(participantID, yearGroup, (nleData) => {
         console.log('✅ NLE task complete.');
         console.log(nleData);
-        showStartMenu(); // ✅ Now returns to main menu instead of using alert
+        nleCompleted = true;
+        showStartMenu();
     });
 }
 
@@ -56,32 +51,34 @@ function startBAMRTOnly() {
     window.controllerBAMRTCallback = (bamrtData) => {
         console.log('✅ BAMRT complete.');
         console.log(bamrtData);
-        showStartMenu(); // ✅ Return to main menu instead of using alert
+        bamrtCompleted = true;
+        showStartMenu();
     };
-    window.bamrtInternalStart(participantID, yearGroup);  // ← correct call
+    window.bamrtInternalStart(participantID, yearGroup);
 }
 
-// Setup participant & year input at start
-let participantID = '';
-let yearGroup = '';
-
 function showStartMenu() {
+    const disableNLE = nleCompleted ? 'disabled' : '';
+    const disableBAMRT = bamrtCompleted ? 'disabled' : '';
+
     document.body.innerHTML = `
         <h1>Combined Tasks Menu</h1>
-        <label>Participant ID: <input type="text" id="participantId" /></label><br/>
+        <label>Participant ID:
+            <input type="text" id="participantId" value="${participantID}" ${participantID ? 'readonly' : ''} />
+        </label><br/>
         <label>Year Group:
-            <select id="yearGroup">
-                <option value="1">Year 1</option>
-                <option value="2">Year 2</option>
-                <option value="3">Year 3</option>
-                <option value="4">Year 4</option>
-                <option value="5">Year 5</option>
-                <option value="6">Year 6</option>
+            <select id="yearGroup" ${participantID ? 'disabled' : ''}>
+                <option value="1" ${yearGroup === '1' ? 'selected' : ''}>Year 1</option>
+                <option value="2" ${yearGroup === '2' ? 'selected' : ''}>Year 2</option>
+                <option value="3" ${yearGroup === '3' ? 'selected' : ''}>Year 3</option>
+                <option value="4" ${yearGroup === '4' ? 'selected' : ''}>Year 4</option>
+                <option value="5" ${yearGroup === '5' ? 'selected' : ''}>Year 5</option>
+                <option value="6" ${yearGroup === '6' ? 'selected' : ''}>Year 6</option>
             </select>
         </label><br/>
-    
-        <button onclick="setupAndStartNLE()">Start NLE Only</button>
-        <button onclick="setupAndStartBAMRT()">Start BAMRT Only</button>
+
+        <button onclick="setupAndStartNLE()" ${disableNLE}>Start NLE Only</button>
+        <button onclick="setupAndStartBAMRT()" ${disableBAMRT}>Start BAMRT Only</button>
     `;
 }
 
