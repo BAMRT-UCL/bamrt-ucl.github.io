@@ -2,7 +2,7 @@
    Combined flow: NLE  →  “Ready?” screen  →  BAMRT
    ========================================================= */
 
-/* helper: draw the transition screen ver013*/
+/* helper: draw the transition screen ver014*/
 function showTransitionAfterNLE() {
     document.body.innerHTML = `
       <h2>Great job!</h2>
@@ -79,7 +79,7 @@ function showStartMenu() {
                 <option value="6">Year 6</option>
             </select>
         </label><br/>
-        <button onclick="setupAndStartCombined()">Start Combined Task</button>
+    
         <button onclick="setupAndStartNLE()">Start NLE Only</button>
         <button onclick="setupAndStartBAMRT()">Start BAMRT Only</button>
     `;
