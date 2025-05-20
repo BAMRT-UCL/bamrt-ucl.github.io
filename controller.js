@@ -2,7 +2,7 @@
    Combined flow: NLE  →  “Ready?” screen  →  BAMRT
    ========================================================= */
 
-/* helper: draw the transition screen ver012*/
+/* helper: draw the transition screen ver013*/
 function showTransitionAfterNLE() {
     document.body.innerHTML = `
       <h2>Great job!</h2>
