@@ -1,6 +1,6 @@
 window.startBAMRT = function(participantId, yearGroup) {
     try {
-        console.log(`[BAMRT WRAPPER] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
+        console.log(`[BAMRT WRAPPER_ver20] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
         if (!participantId || !yearGroup) {
             console.error('[BAMRT WRAPPER] ❌ Missing participantId or yearGroup');
         }
@@ -71,23 +71,26 @@ function internalStartBAMRT(participantId, yearGroup) {
     }
 
     function setupDOM() {
-        document.body.innerHTML = `
-            <div id="taskContainer">
-                <div id="trial-container">
-                    <p>Trial: <span id="trialNumber"></span></p>
-                    <p>Difficulty: <span id="difficultyNumber"></span></p>
-                    <div id="progressBar" style="width: 80%; height: 20px; margin: 1em auto; background: #ddd;">
-                        <div id="progressFill" style="height: 100%; width: 0%; background: #4caf50;"></div>
-                    </div>
-                    <img id="image1" src="" alt="Base Image" />
-                    <img id="image2" src="" alt="Comparison Image" />
-                    <div class="button-container">
-                        <button id="sameButton">Same</button>
-                        <button id="differentButton">Different</button>
-                    </div>
+    document.body.innerHTML = `
+        <div id="taskContainer">
+            <div id="trial-container">
+                <div id="progressBar" style="width:80%;height:20px;margin:1em auto;background:#ddd;">
+                    <div id="progressFill" style="height:100%;width:0%;background:#4caf50;"></div>
                 </div>
+
+                <img id="image1" src="" alt="Base Image" />
+                <img id="image2" src="" alt="Comparison Image" />
+
+                <div class="button-container">
+                    <button id="sameButton">Same</button>
+                    <button id="differentButton">Different</button>
+                </div>
+
+                <p>Trial: <span id="trialNumber"></span></p>
+                <p>Difficulty: <span id="difficultyNumber"></span></p>
             </div>
-        `;
+        </div>
+    `;
 
         document.getElementById('sameButton').onclick = () => submitResponse(true);
         document.getElementById('differentButton').onclick = () => submitResponse(false);
