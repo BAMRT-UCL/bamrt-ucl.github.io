@@ -1,30 +1,45 @@
-function startCombinedTask() {
-    console.log('[Controller v012] Starting Combined Task...');
-    document.body.innerHTML = '<h2>Starting Combined Task...</h2>';
+/* =========================================================
+   Combined flow: NLE  →  “Ready?” screen  →  BAMRT
+   ========================================================= */
 
-    startNLE(participantID, yearGroup, (nleData) => {
-        console.log('[Controller v011] ✅ NLE task complete.');
+/* helper: draw the transition screen ver012*/
+function showTransitionAfterNLE() {
+    document.body.innerHTML = `
+      <h2>Great job!</h2>
+      <p>You’ve completed the first task.</p>
+      <p>When you are ready, click the button below to begin the
+         <strong>Mental Rotation Task</strong>. The task is timed, so make sure
+         you’re comfortable before you start.</p>
+      <button id="startBamrtBtn">Start Mental Rotation Task</button>
+    `;
 
-        // Show transition page
-        document.body.innerHTML = `
-            <h2>Great job!</h2>
-            <p>You’ve completed the first task.</p>
-            <p>Click the button below when you're ready to begin the next task.</p>
-            <button id="continueToBamrtBtn">Start Mental Rotation Task</button>
-        `;
-
-        // Setup listener for BAMRT launch
-        document.getElementById('continueToBamrtBtn').addEventListener('click', () => {
-            console.log('[Controller v011] 🚀 BAMRT launch requested...');
-            window.controllerBAMRTCallback = (bamrtData) => {
-                console.log('[Controller v011] ✅ BAMRT complete.');
-                alert('Both tasks complete. Thank you!');
-            };
-            // Now start BAMRT through the wrapper
-            window.bamrtInternalStart(participantID, yearGroup);
-        });
+    /* launch BAMRT when the participant clicks */
+    document.getElementById('startBamrtBtn').addEventListener('click', () => {
+        console.log('[Controller] ▶ Starting BAMRT…');
+        window.bamrtInternalStart(participantID, yearGroup);
     });
 }
+
+/* main entry-point called from the menu */
+function startCombinedTask() {
+    console.log('[Controller] ▶ Starting combined flow');
+    document.body.innerHTML = '<h2>Number-Line Task loading…</h2>';
+
+    /* run NLE first */
+    startNLE(participantID, yearGroup, (nleData) => {
+        console.log('[Controller] ✅ NLE finished');
+        /* draw the transition screen */
+        showTransitionAfterNLE();
+
+        /* set up what happens when BAMRT ends */
+        window.controllerBAMRTCallback = (bamrtData) => {
+            console.log('[Controller] ✅ BAMRT finished');
+            alert('Both tasks complete – thank you!');
+            showStartMenu();          // back to landing page
+        };
+    });
+}
+
 
 function startNLEOnly() {
     document.body.innerHTML = '<h2>Starting NLE Only...</h2>';
