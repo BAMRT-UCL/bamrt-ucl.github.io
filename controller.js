@@ -1,8 +1,10 @@
-/* =========================================================
-   Combined flow: NLE  →  “Ready?” screen  →  BAMRT
-   ========================================================= */
+/**
+ * =========================================================
+ * Combined flow: NLE  →  “Ready?” screen  →  BAMRT
+ * =========================================================
+ */
 
-/* helper: draw the transition screen ver014*/
+/* helper: draw the transition screen ver015*/
 function showTransitionAfterNLE() {
     document.body.innerHTML = `
       <h2>Great job!</h2>
@@ -40,13 +42,12 @@ function startCombinedTask() {
     });
 }
 
-
 function startNLEOnly() {
     document.body.innerHTML = '<h2>Starting NLE Only...</h2>';
     startNLE(participantID, yearGroup, (nleData) => {
         console.log('✅ NLE task complete.');
         console.log(nleData);
-        alert('NLE Task Complete. Data logged to console.');
+        showStartMenu(); // ✅ Now returns to main menu instead of using alert
     });
 }
 
@@ -55,11 +56,10 @@ function startBAMRTOnly() {
     window.controllerBAMRTCallback = (bamrtData) => {
         console.log('✅ BAMRT complete.');
         console.log(bamrtData);
-        alert('BAMRT Task Complete. Data logged to console.');
+        showStartMenu(); // ✅ Return to main menu instead of using alert
     };
     window.bamrtInternalStart(participantID, yearGroup);  // ← correct call
 }
-
 
 // Setup participant & year input at start
 let participantID = '';
