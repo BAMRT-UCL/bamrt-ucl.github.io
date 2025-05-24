@@ -1,5 +1,5 @@
 window.startNLE = function(participantID, yearGroup, callback) {
-    console.log(`[NLE v008] Starting task for ${participantID}, Year ${yearGroup}`);
+    console.log(`[NLE v009] Starting task for ${participantID}, Year ${yearGroup}`);
 
     document.body.innerHTML = `
       <h1>Number Line Estimation Task</h1>
@@ -29,10 +29,17 @@ window.startNLE = function(participantID, yearGroup, callback) {
     let currentTarget = null;
 
     function resizeCanvas() {
-        canvas.width = document.getElementById('numberLineContainer').clientWidth;
-        canvas.height = 100;
-        drawNumberLine();
+      const container = document.getElementById('numberLineContainer');
+      canvas.width  = container.clientWidth;
+      canvas.height = 100;
+      drawNumberLine();
     }
+
+    // initial sizing
+    resizeCanvas();
+
+    // re‐size on window change
+    window.addEventListener('resize', resizeCanvas);
 
     function drawNumberLine() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -72,6 +79,8 @@ window.startNLE = function(participantID, yearGroup, callback) {
                             : null;
         }
         targetNumberElement.textContent = currentTarget ?? 'Task Completed';
+        // start timing each trial
+        trialStartTime = Date.now();
     }
 
     function convertXToNumber(x) {
@@ -117,12 +126,14 @@ window.startNLE = function(participantID, yearGroup, callback) {
                 alert('Estimate not close enough. Let\'s check understanding.');
             }
         } else {
+            const responseTime = (Date.now() - trialStartTime) / 1000;
             estimates.push({
                 trial: currentTrial + 1,
                 target: currentTarget,
                 estimate: currentEstimate,
                 difference: currentEstimate - currentTarget,
-                abs_error: Math.abs(currentEstimate - currentTarget)
+                abs_error: Math.abs(currentEstimate - currentTarget),
+                rt: responseTime.toFixed(2)
             });
             currentTrial++;
             if (currentTrial < targetNumbers.length) {
@@ -137,7 +148,6 @@ window.startNLE = function(participantID, yearGroup, callback) {
 
     drawNumberLine();
     displayTargetNumber();
-    resizeCanvas();
 
     function endTask() {
         console.log('Task completed, uploading results.');
