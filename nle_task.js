@@ -1,5 +1,5 @@
 window.startNLE = function(participantID, yearGroup, callback) {
-    console.log(`[NLE v009] Starting task for ${participantID}, Year ${yearGroup}`);
+    console.log(`[NLE v010] Starting task for ${participantID}, Year ${yearGroup}`);
 
     document.body.innerHTML = `
       <h1>Number Line Estimation Task</h1>
@@ -163,23 +163,10 @@ function endTask() {
     formData.append('entry.569501423', new Date().toISOString());
     formData.append('entry.187358765', JSON.stringify(estimates));
 
--   fetch('https://docs.google.com/forms/u/0/d/e/…/formResponse', {
--       method: 'POST',
--       mode: 'no-cors',
--       body: formData
--   })
--   .then(() => {
--       console.log('✅ NLE trials uploaded to Form');
--       if (typeof callback === 'function') {
--           callback(estimates);
--       } else {
--           document.body.innerHTML = '<h2>Thanks! Your results have been submitted.</h2>';
--       }
--   })
--   .catch(err => console.error('❌ Upload failed:', err));
-+   // NO auto-POST here. Instead, invoke callback immediately:
-+   if (typeof callback === 'function') {
-+       callback(estimates);
-+   }
+
+ // NO auto-POST here. Instead, invoke callback immediately:
+if (typeof callback === 'function') {
+	callback(estimates);
+	}
 }
-};
+
