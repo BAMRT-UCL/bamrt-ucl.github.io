@@ -149,33 +149,37 @@ window.startNLE = function(participantID, yearGroup, callback) {
     drawNumberLine();
     displayTargetNumber();
 
-    function endTask() {
-        console.log('Task completed, uploading results.');
+function endTask() {
+    console.log('Task completed, uploading results.');
 
-        document.body.innerHTML = `
-            <h2>Submitting Results…</h2>
-            <p>Please wait while we upload your data.</p>
-        `;
+    document.body.innerHTML = `
+        <h2>Submitting Results…</h2>
+        <p>Please wait while we upload your data.</p>
+    `;
 
-        const formData = new FormData();
-        formData.append('entry.713541064', participantID);
-        formData.append('entry.796534484', yearGroup);
-        formData.append('entry.569501423', new Date().toISOString());
-        formData.append('entry.187358765', JSON.stringify(estimates));
+    const formData = new FormData();
+    formData.append('entry.713541064', participantID);
+    formData.append('entry.796534484', yearGroup);
+    formData.append('entry.569501423', new Date().toISOString());
+    formData.append('entry.187358765', JSON.stringify(estimates));
 
-        fetch('https://docs.google.com/forms/u/0/d/e/1FAIpQLScAPwRBzflFbnWjK4RZc2SXziBHBBHIkXStjs_slV3qGXs7vQ/formResponse', {
-            method: 'POST',
-            mode: 'no-cors',
-            body: formData
-        })
-        .then(() => {
-            console.log('✅ NLE trials uploaded to Form');
-            if (typeof callback === 'function') {
-                callback(estimates);
-            } else {
-                document.body.innerHTML = '<h2>Thanks! Your results have been submitted.</h2>';
-            }
-        })
-        .catch(err => console.error('❌ Upload failed:', err));
-    }
+-   fetch('https://docs.google.com/forms/u/0/d/e/…/formResponse', {
+-       method: 'POST',
+-       mode: 'no-cors',
+-       body: formData
+-   })
+-   .then(() => {
+-       console.log('✅ NLE trials uploaded to Form');
+-       if (typeof callback === 'function') {
+-           callback(estimates);
+-       } else {
+-           document.body.innerHTML = '<h2>Thanks! Your results have been submitted.</h2>';
+-       }
+-   })
+-   .catch(err => console.error('❌ Upload failed:', err));
++   // NO auto-POST here. Instead, invoke callback immediately:
++   if (typeof callback === 'function') {
++       callback(estimates);
++   }
+}
 };

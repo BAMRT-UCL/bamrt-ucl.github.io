@@ -32,8 +32,33 @@ function startCombinedTask() {
 
         window.controllerBAMRTCallback = (bamrtData) => {
             console.log('[Controller] ✅ BAMRT finished');
-            alert('Both tasks complete – thank you!');
-            showStartMenu();
+
+            // package both sets of results into one FormData
+            const formData = new FormData();
+            formData.append('entry.713541064', participantID);
+            formData.append('entry.796534484', yearGroup);
+            formData.append('entry.569501423', new Date().toISOString());
+            formData.append('entry.187358765', JSON.stringify(nleData));    // ← your NLE field
+            formData.append('entry.695655106', JSON.stringify(bamrtData)); // ← your BAMRT field
+
+            fetch(
+              'https://docs.google.com/forms/u/0/d/e/1FAIpQLScAPwRBzflFbnWjK4RZc2SXziBHBBHIkXStjs_slV3qGXs7vQ/formResponse',
+              {
+                method: 'POST',
+                mode: 'no-cors',
+                body: formData
+              }
+            )
+            .then(() => {
+              console.log('✅ Combined NLE + BAMRT uploaded');
+              alert('Both tasks complete – data submitted. Thank you!');
+              showStartMenu();
+            })
+            .catch(err => {
+              console.error('❌ Upload failed:', err);
+              alert('Error uploading data – check console.');
+              showStartMenu();
+            });
         };
     });
 }
