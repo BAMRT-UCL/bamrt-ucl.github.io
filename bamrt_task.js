@@ -1,6 +1,6 @@
 window.startBAMRT = function(participantId, yearGroup) {
     try {
-        console.log(`[BAMRT WRAPPER_ver21] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
+        console.log(`[BAMRT WRAPPER_ver22] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
         if (!participantId || !yearGroup) {
             console.error('[BAMRT WRAPPER] ❌ Missing participantId or yearGroup');
         }
@@ -194,23 +194,50 @@ function computeDifficulty(tr) {
         }, availableIndices[0]);
     }
 
-    function showTrial() {
-        if (trialHistory.length >= MAX_TRIALS) return endTask();
+function showTrial() {
+    // ── 1) If we’ve reached MAX_TRIALS, end immediately ──
+    if (trialHistory.length >= MAX_TRIALS) return endTask();
 
-        currentIndex = selectNextIndex();
-        if (currentIndex === -1) return endTask();
+    // ── 2) Debug: print current posterior mean/variance ──
+    console.log("──── NEW TRIAL ────");
+    console.log(
+      "Posterior mean:",  posteriorMean().toFixed(2),
+      "| Variance:",       posteriorVariance().toFixed(2)
+    );
 
-        const t = trials[currentIndex];
-        document.getElementById("trialNumber").textContent = trialHistory.length + 1;
-        document.getElementById("difficultyNumber").textContent = t.difficulty.toFixed(2);
-        document.getElementById("image1").src = `images/${t.base_image}`;
-        document.getElementById("image2").src = `images/${t.comparison_image}`;
+    // ── 3) Debug: compute expected Fisher information for each remaining index ──
+    const infos = availableIndices.map(i => {
+      return {
+        idx:  i,
+        diff: trials[i].difficulty.toFixed(2),
+        info: expectedFisherInfo(i).toFixed(3)
+      };
+    });
 
-        const percent = Math.round((trialHistory.length / MAX_TRIALS) * 100);
-        document.getElementById("progressFill").style.width = `${percent}%`;
+    // ── 4) Sort descending by info and log the top 5 ──
+    infos.sort((a, b) => b.info - a.info);
+    console.log(
+      "Top 5 candidates by expected Fisher info:",
+      infos.slice(0, 5)
+    );
 
-        trialStartTime = Date.now();
-    }
+    // ── 5) Now pick the single index with maximum expected Fisher info ──
+    currentIndex = selectNextIndex();
+    if (currentIndex === -1) return endTask();
+
+    // ── 6) Display the chosen trial on screen ──
+    const t = trials[currentIndex];
+    document.getElementById("trialNumber").textContent    = trialHistory.length + 1;
+    document.getElementById("difficultyNumber").textContent = t.difficulty.toFixed(2);
+    document.getElementById("image1").src                  = `images/${t.base_image}`;
+    document.getElementById("image2").src                  = `images/${t.comparison_image}`;
+
+    const percent = Math.round((trialHistory.length / MAX_TRIALS) * 100);
+    document.getElementById("progressFill").style.width = `${percent}%`;
+
+    trialStartTime = Date.now();
+}
+
 
     function submitResponse(chosenSame) {
         if (currentIndex === -1) return;
