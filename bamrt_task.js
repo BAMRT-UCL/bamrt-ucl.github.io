@@ -1,6 +1,6 @@
 window.startBAMRT = function(participantId, yearGroup) {
     try {
-        console.log(`[BAMRT WRAPPER_ver27] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
+        console.log(`[BAMRT WRAPPER_ver28] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
         if (!participantId || !yearGroup) {
             console.error('[BAMRT WRAPPER] ❌ Missing participantId or yearGroup');
         }
@@ -219,10 +219,20 @@ function selectNextIndex() {
 
 
 function showTrial() {
-  // ── 1) If posterior is already narrow enough, end early ──
-  if (posteriorVariance() < 5) {
-    console.log("[BAMRT] Posterior variance < 5 → ending early (confident).");
-    return endTask();
+  const mean     = posteriorMean();
+  const variance = posteriorVariance();
+  const sd       = Math.sqrt(variance);
+
+  // ── 1) Only allow “stop on low variance” after MIN_TRIALS_FOR_VARIANCE_STOP ──
+  const MIN_TRIALS_FOR_VARIANCE_STOP = 15;
+  if (trialHistory.length >= MIN_TRIALS_FOR_VARIANCE_STOP) {
+    if (variance < 5) {
+      console.log(
+        `[BAMRT] Posterior variance (${variance.toFixed(2)}) < 5 ` +
+        `after ${trialHistory.length} trials → ending early.`
+      );
+      return endTask();
+    }
   }
 
   // ── 2) If we’ve reached MAX_TRIALS, end ──
@@ -230,14 +240,12 @@ function showTrial() {
     return endTask();
   }
 
-  // ── 3) Debug: print current posterior mean/variance ──
-  const mean     = posteriorMean();
-  const variance = posteriorVariance();
-  const sd       = Math.sqrt(variance);
+  // ── 3) Debug: print current posterior mean/variance/trial count ──
   console.log("──── NEW TRIAL ────");
   console.log(
     "Posterior mean:",  mean.toFixed(2),
-    "| Variance:",       variance.toFixed(2)
+    "| Variance:",       variance.toFixed(2),
+    "| Trials so far:",  trialHistory.length
   );
 
   // ── 4) Debug: compute expected Fisher info for each remaining index ──
@@ -252,55 +260,79 @@ function showTrial() {
     infos.slice(0, 5)
   );
 
-  // ── 5) Compute “targetTheta” to push upward (λ=0.5) ──
+  // ── 5) If we haven’t yet done at least MIN_TRIALS_BEFORE_STOP, skip “ceiling” & “zero-info” ──
+  const MIN_TRIALS_BEFORE_STOP = 20;
+  if (trialHistory.length < MIN_TRIALS_BEFORE_STOP) {
+    // Simply pick next item normally (no early‐end logic yet)
+    currentIndex = selectNextIndex();
+    if (currentIndex === -1) {
+      return endTask();
+    }
+    // Display that trial:
+    const t = trials[currentIndex];
+    document.getElementById("trialNumber").textContent     = trialHistory.length + 1;
+    document.getElementById("difficultyNumber").textContent = t.difficulty.toFixed(2);
+    document.getElementById("image1").src                   = `images/${t.base_image}`;
+    document.getElementById("image2").src                   = `images/${t.comparison_image}`;
+    const percent = Math.round((trialHistory.length / MAX_TRIALS) * 100);
+    document.getElementById("progressFill").style.width = `${percent}%`;
+    trialStartTime = Date.now();
+    return;
+  }
+
+  // ── 6) Compute “targetTheta” to push upward (λ = 0.5) ──
   const lambda = 0.5;
   const targetTheta = mean + lambda * sd;
 
-  // ── 6) Ceiling check: if targetTheta exceeds the hardest item left, stop as top score ──
+  // ── 7) Ceiling check (only after MIN_TRIALS_BEFORE_STOP) ──
   const maxRemainingDiff = Math.max(
     ...availableIndices.map(i => trials[i].difficulty)
   );
   if (targetTheta >= maxRemainingDiff - 0.1) {
     console.log(
-      `[BAMRT] targetTheta (${targetTheta.toFixed(2)}) ≥ ` +
-      `maxRemainingDiff (${maxRemainingDiff.toFixed(2)}) → Ending with top score.`
+      `[BAMRT] (after ${trialHistory.length} trials) ` +
+      `targetTheta (${targetTheta.toFixed(2)}) ≥ ` +
+      `maxRemainingDiff (${maxRemainingDiff.toFixed(2)}) → ` +
+      `Ending with top score.`
     );
     return endTask();
   }
 
-  // ── 7) Zero-info check: if all remaining items have negligible info, end ──
-  // Compute the maximum expected-Fisher-info among remaining items
-  const maxInfo = Math.max(
-    ...availableIndices.map(i => expectedFisherInfo(i))
-  );
-  // If even the best remaining item has info < 0.001, stop here
-  if (maxInfo < 1e-3) {
+  // ── 8) “Safe zero-info” check: only stop if no remaining item within ±5 of current mean ──
+  let anyWithin5 = false;
+  for (let idx of availableIndices) {
+    const b = trials[idx].difficulty;
+    if (Math.abs(b - mean) <= 5) {
+      anyWithin5 = true;
+      break;
+    }
+  }
+  if (!anyWithin5) {
     console.log(
-      `[BAMRT] All remaining items have near-zero info ` +
-      `under θ≈${mean.toFixed(2)} (maxInfo=${maxInfo.toFixed(6)}). Ending test.`
+      `[BAMRT] (after ${trialHistory.length} trials) ` +
+      `No remaining items within ±5 of θ≈${mean.toFixed(2)}; ` +
+      `ending test early (all left‐over info negligible).`
     );
     return endTask();
   }
 
-  // ── 8) Otherwise, pick the next item via boosted Fisher (selectNextIndex) ──
+  // ── 9) Otherwise, pick the next item via boosted Fisher ──
   currentIndex = selectNextIndex();
   if (currentIndex === -1) {
-    // No items left; end the task
     return endTask();
   }
 
-  // ── 9) Display the chosen trial on screen ──
+  // ── 10) Display the chosen trial on screen ──
   const t = trials[currentIndex];
   document.getElementById("trialNumber").textContent     = trialHistory.length + 1;
   document.getElementById("difficultyNumber").textContent = t.difficulty.toFixed(2);
   document.getElementById("image1").src                   = `images/${t.base_image}`;
   document.getElementById("image2").src                   = `images/${t.comparison_image}`;
-
   const percent = Math.round((trialHistory.length / MAX_TRIALS) * 100);
   document.getElementById("progressFill").style.width = `${percent}%`;
-
   trialStartTime = Date.now();
 }
+
 
 
 
