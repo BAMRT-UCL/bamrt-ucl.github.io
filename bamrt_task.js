@@ -1,6 +1,6 @@
 window.startBAMRT = function(participantId, yearGroup) {
     try {
-        console.log(`[BAMRT WRAPPER_ver30] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
+        console.log(`[BAMRT WRAPPER_ver31] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
         if (!participantId || !yearGroup) {
             console.error('[BAMRT WRAPPER] ❌ Missing participantId or yearGroup');
         }
@@ -224,7 +224,7 @@ function showTrial() {
   const sd       = Math.sqrt(variance);
 
   // ── 1) Only allow “stop on low variance” after MIN_TRIALS_FOR_VARIANCE_STOP ──
-  const MIN_TRIALS_FOR_VARIANCE_STOP = 15;
+  const MIN_TRIALS_FOR_VARIANCE_STOP = 25;
   if (trialHistory.length >= MIN_TRIALS_FOR_VARIANCE_STOP) {
     if (variance < 5) {
       console.log(
