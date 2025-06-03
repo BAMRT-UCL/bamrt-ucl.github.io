@@ -1,6 +1,6 @@
 window.startBAMRT = function(participantId, yearGroup) {
     try {
-        console.log(`[BAMRT WRAPPER_ver25] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
+        console.log(`[BAMRT WRAPPER_ver26] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
         if (!participantId || !yearGroup) {
             console.error('[BAMRT WRAPPER] ❌ Missing participantId or yearGroup');
         }
@@ -22,7 +22,7 @@ function internalStartBAMRT(participantId, yearGroup) {
     let currentIndex = -1;
     let trialStartTime = 0;
 
-    const discrimination = 1.7;
+    const discrimination = 1.5;
     const thetaGrid = Array.from({ length: 1501 }, (_, i) => i * 0.1);
     let posterior = [];
     let priorMean = 30;
@@ -185,14 +185,38 @@ function computeDifficulty(tr) {
         showTrial();
     }
 
-    function selectNextIndex() {
-        if (!availableIndices.length) return -1;
-        return availableIndices.reduce((best, idx) => {
-            const infoBest = expectedFisherInfo(best);
-            const infoThis = expectedFisherInfo(idx);
-            return infoThis > infoBest ? idx : best;
-        }, availableIndices[0]);
+    /**
+ * Return the index of the available item that best matches a "boosted" theta.
+ * We pick a λ > 0 (e.g. 0.5 or 1.0) so that targetTheta = posteriorMean + λ·sqrt(posteriorVariance).
+ * Then we simply choose the item whose single‐theta FisherInfo(targetTheta, b_i) is maximal.
+ */
+function selectNextIndex() {
+  if (!availableIndices.length) return -1;
+
+  // 1) compute "target theta" above the current estimate
+  const mean   = posteriorMean();
+  const variance = posteriorVariance();
+  const sd     = Math.sqrt(variance);
+
+  const lambda = 0.5;  // ↔ push half an SD above the mean; adjust up/down as needed
+  const targetTheta = mean + lambda * sd;
+
+  // 2) find the available idx whose fisherInfo(targetTheta, b_i) is largest
+  let bestIdx     = availableIndices[0];
+  let bestFisher  = fisherInfo(targetTheta, trials[bestIdx].difficulty);
+
+  for (let j = 1; j < availableIndices.length; j++) {
+    const idx       = availableIndices[j];
+    const b         = trials[idx].difficulty;
+    const thisFisher = fisherInfo(targetTheta, b);
+    if (thisFisher > bestFisher) {
+      bestFisher = thisFisher;
+      bestIdx    = idx;
     }
+  }
+  return bestIdx;
+}
+
 
 function showTrial() {
     // ── 1) If we’ve reached MAX_TRIALS, end immediately ──
