@@ -5,6 +5,9 @@ let participantID = '';
 let yearGroup = '';
 let nleCompleted = false;
 let bamrtCompleted = false;
+let nleDataStored    = null;
+let bamrtDataStored  = null;
+
 
 function showTransitionAfterNLE() {
     document.body.innerHTML = `
@@ -68,21 +71,68 @@ function startNLEOnly() {
     startNLE(participantID, yearGroup, (nleData) => {
         console.log('✅ NLE task complete.');
         console.log(nleData);
-        nleCompleted = true;
-        showStartMenu();
+        nleDataStored   = nleData;       // store the JSON blob
+        nleCompleted    = true;
+        showStartMenu();                 // go back to menu
+        maybeSendCombined();             // if BAMRT is done already, trigger send
     });
 }
+
 
 function startBAMRTOnly() {
     document.body.innerHTML = '<h2>Starting BAMRT Only...</h2>';
     window.controllerBAMRTCallback = (bamrtData) => {
         console.log('✅ BAMRT complete.');
         console.log(bamrtData);
-        bamrtCompleted = true;
-        showStartMenu();
+        bamrtDataStored = bamrtData;     // store the JSON blob
+        bamrtCompleted  = true;
+        showStartMenu();                 // go back to menu
+        maybeSendCombined();             // if NLE is done already, trigger send
     };
     window.bamrtInternalStart(participantID, yearGroup);
 }
+
+function maybeSendCombined() {
+    // Only proceed if we’ve run BOTH tasks:
+    if (nleCompleted && bamrtCompleted) {
+        console.log('[Controller] ▶ Both tasks done – sending combined data');
+
+        const formData = new FormData();
+        formData.append('entry.713541064', participantID);
+        formData.append('entry.796534484', yearGroup);
+        formData.append('entry.569501423', new Date().toISOString());
+        formData.append('entry.187358765', JSON.stringify(nleDataStored));   // NLE field
+        formData.append('entry.695655106', JSON.stringify(bamrtDataStored)); // BAMRT field
+
+        fetch(
+          'https://docs.google.com/forms/u/0/d/e/1FAIpQLScAPwRBzflFbnWjK4RZc2SXziBHBBHIkXStjs_slV3qGXs7vQ/formResponse',
+          {
+            method: 'POST',
+            mode: 'no-cors',
+            body: formData
+          }
+        )
+        .then(() => {
+          console.log('✅ Combined NLE + BAMRT uploaded');
+          alert('Both tasks complete – data submitted. Thank you!');
+        })
+        .catch(err => {
+          console.error('❌ Upload failed:', err);
+          alert('Error uploading data – check console.');
+        })
+        .finally(() => {
+          // Reset for next participant or next run:
+          nleCompleted     = false;
+          bamrtCompleted   = false;
+          nleDataStored    = null;
+          bamrtDataStored  = null;
+          // Re-render the menu so fields clear (or remain filled, per your preference):
+          showStartMenu();
+        });
+    }
+}
+
+
 
 function showStartMenu() {
 
