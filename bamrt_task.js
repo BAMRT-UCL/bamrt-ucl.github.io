@@ -1,6 +1,6 @@
 window.startBAMRT = function(participantId, yearGroup) {
     try {
-        console.log(`[BAMRT WRAPPER_ver31] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
+        console.log(`[BAMRT WRAPPER_ver32] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
         if (!participantId || !yearGroup) {
             console.error('[BAMRT WRAPPER] ❌ Missing participantId or yearGroup');
         }
@@ -219,12 +219,40 @@ function selectNextIndex() {
 
 
 function showTrial() {
+  // ─── Step 0: If this is the first time we’re showing a trial, pick the easiest item ───
+  if (!firstTrialDone) {
+    firstTrialDone = true;
+
+    // Find the index in availableIndices with the smallest difficulty:
+    let easiestIdx = availableIndices[0];
+    for (let idx of availableIndices) {
+      if (trials[idx].difficulty < trials[easiestIdx].difficulty) {
+        easiestIdx = idx;
+      }
+    }
+    currentIndex = easiestIdx;
+
+    // Remove it from availableIndices immediately:
+    availableIndices = availableIndices.filter(i => i !== currentIndex);
+
+    // Display that easy trial on screen:
+    const t0 = trials[currentIndex];
+    document.getElementById("trialNumber").textContent     = trialHistory.length + 1;
+    document.getElementById("difficultyNumber").textContent = t0.difficulty.toFixed(2);
+    document.getElementById("image1").src                   = `images/${t0.base_image}`;
+    document.getElementById("image2").src                   = `images/${t0.comparison_image}`;
+    const percent0 = Math.round((trialHistory.length / MAX_TRIALS) * 100);
+    document.getElementById("progressFill").style.width = `${percent0}%`;
+    trialStartTime = Date.now();
+    return;
+  }
+
+  // ─── Step 1: Only allow “stop on low variance” after MIN_TRIALS_FOR_VARIANCE_STOP ───
   const mean     = posteriorMean();
   const variance = posteriorVariance();
   const sd       = Math.sqrt(variance);
 
-  // ── 1) Only allow “stop on low variance” after MIN_TRIALS_FOR_VARIANCE_STOP ──
-  const MIN_TRIALS_FOR_VARIANCE_STOP = 25;
+  const MIN_TRIALS_FOR_VARIANCE_STOP = 15;
   if (trialHistory.length >= MIN_TRIALS_FOR_VARIANCE_STOP) {
     if (variance < 5) {
       console.log(
@@ -235,12 +263,12 @@ function showTrial() {
     }
   }
 
-  // ── 2) If we’ve reached MAX_TRIALS, end ──
+  // ─── Step 2: If we’ve reached MAX_TRIALS, end ───
   if (trialHistory.length >= MAX_TRIALS) {
     return endTask();
   }
 
-  // ── 3) Debug: print current posterior mean/variance/trial count ──
+  // ─── Step 3: Debug: print current posterior mean/variance/trial count ───
   console.log("──── NEW TRIAL ────");
   console.log(
     "Posterior mean:",  mean.toFixed(2),
@@ -248,7 +276,7 @@ function showTrial() {
     "| Trials so far:",  trialHistory.length
   );
 
-  // ── 4) Debug: compute expected Fisher info for each remaining index ──
+  // ─── Step 4: Debug: compute expected Fisher info for each remaining index ───
   const infos = availableIndices.map(i => ({
     idx:  i,
     diff: trials[i].difficulty.toFixed(2),
@@ -260,7 +288,7 @@ function showTrial() {
     infos.slice(0, 5)
   );
 
-  // ── 5) If we haven’t yet done at least MIN_TRIALS_BEFORE_STOP, skip “ceiling” & “zero-info” ──
+  // ─── Step 5: If we haven’t yet done at least MIN_TRIALS_BEFORE_STOP, skip ceiling/zero-info ───
   const MIN_TRIALS_BEFORE_STOP = 20;
   if (trialHistory.length < MIN_TRIALS_BEFORE_STOP) {
     // Simply pick next item normally (no early‐end logic yet)
@@ -280,11 +308,11 @@ function showTrial() {
     return;
   }
 
-  // ── 6) Compute “targetTheta” to push upward (λ = 0.5) ──
+  // ─── Step 6: Compute “targetTheta” to push upward (λ = 0.5) ───
   const lambda = 0.5;
   const targetTheta = mean + lambda * sd;
 
-  // ── 7) Ceiling check (only after MIN_TRIALS_BEFORE_STOP) ──
+  // ─── Step 7: Ceiling check (only after MIN_TRIALS_BEFORE_STOP) ───
   const maxRemainingDiff = Math.max(
     ...availableIndices.map(i => trials[i].difficulty)
   );
@@ -298,7 +326,7 @@ function showTrial() {
     return endTask();
   }
 
-  // ── 8) “Safe zero-info” check: only stop if no remaining item within ±5 of current mean ──
+  // ─── Step 8: “Safe zero‐info” check: only stop if no item within ±5 of current mean ───
   let anyWithin5 = false;
   for (let idx of availableIndices) {
     const b = trials[idx].difficulty;
@@ -316,13 +344,13 @@ function showTrial() {
     return endTask();
   }
 
-  // ── 9) Otherwise, pick the next item via boosted Fisher ──
+  // ─── Step 9: Otherwise, pick the next item via boosted Fisher ───
   currentIndex = selectNextIndex();
   if (currentIndex === -1) {
     return endTask();
   }
 
-  // ── 10) Display the chosen trial on screen ──
+  // ─── Step 10: Display the chosen trial on screen ───
   const t = trials[currentIndex];
   document.getElementById("trialNumber").textContent     = trialHistory.length + 1;
   document.getElementById("difficultyNumber").textContent = t.difficulty.toFixed(2);
@@ -332,6 +360,7 @@ function showTrial() {
   document.getElementById("progressFill").style.width = `${percent}%`;
   trialStartTime = Date.now();
 }
+
 
 
 
