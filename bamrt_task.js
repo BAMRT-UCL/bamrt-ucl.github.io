@@ -1,6 +1,6 @@
 window.startBAMRT = function(participantId, yearGroup) {
     try {
-        console.log(`[BAMRT WRAPPER_ver22] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
+        console.log(`[BAMRT WRAPPER_ver23] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
         if (!participantId || !yearGroup) {
             console.error('[BAMRT WRAPPER] ❌ Missing participantId or yearGroup');
         }
@@ -22,11 +22,11 @@ function internalStartBAMRT(participantId, yearGroup) {
     let currentIndex = -1;
     let trialStartTime = 0;
 
-    const discrimination = 1.0;
+    const discrimination = 1.2;
     const thetaGrid = Array.from({ length: 1501 }, (_, i) => i * 0.1);
     let posterior = [];
     let priorMean = 30;
-    let priorSD = 20;
+    let priorSD = 15;
     const MAX_TRIALS = 50;
 
     function normalPDF(x, mean, sd) {
