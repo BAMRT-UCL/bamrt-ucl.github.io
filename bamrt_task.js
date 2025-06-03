@@ -1,6 +1,6 @@
 window.startBAMRT = function(participantId, yearGroup) {
     try {
-        console.log(`[BAMRT WRAPPER_ver26] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
+        console.log(`[BAMRT WRAPPER_ver27] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
         if (!participantId || !yearGroup) {
             console.error('[BAMRT WRAPPER] ❌ Missing participantId or yearGroup');
         }
@@ -219,48 +219,89 @@ function selectNextIndex() {
 
 
 function showTrial() {
-    // ── 1) If we’ve reached MAX_TRIALS, end immediately ──
-    if (trialHistory.length >= MAX_TRIALS) return endTask();
+  // ── 1) If posterior is already narrow enough, end early ──
+  if (posteriorVariance() < 5) {
+    console.log("[BAMRT] Posterior variance < 5 → ending early (confident).");
+    return endTask();
+  }
 
-    // ── 2) Debug: print current posterior mean/variance ──
-    console.log("──── NEW TRIAL ────");
+  // ── 2) If we’ve reached MAX_TRIALS, end ──
+  if (trialHistory.length >= MAX_TRIALS) {
+    return endTask();
+  }
+
+  // ── 3) Debug: print current posterior mean/variance ──
+  const mean     = posteriorMean();
+  const variance = posteriorVariance();
+  const sd       = Math.sqrt(variance);
+  console.log("──── NEW TRIAL ────");
+  console.log(
+    "Posterior mean:",  mean.toFixed(2),
+    "| Variance:",       variance.toFixed(2)
+  );
+
+  // ── 4) Debug: compute expected Fisher info for each remaining index ──
+  const infos = availableIndices.map(i => ({
+    idx:  i,
+    diff: trials[i].difficulty.toFixed(2),
+    info: expectedFisherInfo(i).toFixed(3)
+  }));
+  infos.sort((a, b) => b.info - a.info);
+  console.log(
+    "Top 5 candidates by expected Fisher info:",
+    infos.slice(0, 5)
+  );
+
+  // ── 5) Compute “targetTheta” to push upward (λ=0.5) ──
+  const lambda = 0.5;
+  const targetTheta = mean + lambda * sd;
+
+  // ── 6) Ceiling check: if targetTheta exceeds the hardest item left, stop as top score ──
+  const maxRemainingDiff = Math.max(
+    ...availableIndices.map(i => trials[i].difficulty)
+  );
+  if (targetTheta >= maxRemainingDiff - 0.1) {
     console.log(
-      "Posterior mean:",  posteriorMean().toFixed(2),
-      "| Variance:",       posteriorVariance().toFixed(2)
+      `[BAMRT] targetTheta (${targetTheta.toFixed(2)}) ≥ ` +
+      `maxRemainingDiff (${maxRemainingDiff.toFixed(2)}) → Ending with top score.`
     );
+    return endTask();
+  }
 
-    // ── 3) Debug: compute expected Fisher information for each remaining index ──
-    const infos = availableIndices.map(i => {
-      return {
-        idx:  i,
-        diff: trials[i].difficulty.toFixed(2),
-        info: expectedFisherInfo(i).toFixed(3)
-      };
-    });
-
-    // ── 4) Sort descending by info and log the top 5 ──
-    infos.sort((a, b) => b.info - a.info);
+  // ── 7) Zero-info check: if all remaining items have negligible info, end ──
+  // Compute the maximum expected-Fisher-info among remaining items
+  const maxInfo = Math.max(
+    ...availableIndices.map(i => expectedFisherInfo(i))
+  );
+  // If even the best remaining item has info < 0.001, stop here
+  if (maxInfo < 1e-3) {
     console.log(
-      "Top 5 candidates by expected Fisher info:",
-      infos.slice(0, 5)
+      `[BAMRT] All remaining items have near-zero info ` +
+      `under θ≈${mean.toFixed(2)} (maxInfo=${maxInfo.toFixed(6)}). Ending test.`
     );
+    return endTask();
+  }
 
-    // ── 5) Now pick the single index with maximum expected Fisher info ──
-    currentIndex = selectNextIndex();
-    if (currentIndex === -1) return endTask();
+  // ── 8) Otherwise, pick the next item via boosted Fisher (selectNextIndex) ──
+  currentIndex = selectNextIndex();
+  if (currentIndex === -1) {
+    // No items left; end the task
+    return endTask();
+  }
 
-    // ── 6) Display the chosen trial on screen ──
-    const t = trials[currentIndex];
-    document.getElementById("trialNumber").textContent    = trialHistory.length + 1;
-    document.getElementById("difficultyNumber").textContent = t.difficulty.toFixed(2);
-    document.getElementById("image1").src                  = `images/${t.base_image}`;
-    document.getElementById("image2").src                  = `images/${t.comparison_image}`;
+  // ── 9) Display the chosen trial on screen ──
+  const t = trials[currentIndex];
+  document.getElementById("trialNumber").textContent     = trialHistory.length + 1;
+  document.getElementById("difficultyNumber").textContent = t.difficulty.toFixed(2);
+  document.getElementById("image1").src                   = `images/${t.base_image}`;
+  document.getElementById("image2").src                   = `images/${t.comparison_image}`;
 
-    const percent = Math.round((trialHistory.length / MAX_TRIALS) * 100);
-    document.getElementById("progressFill").style.width = `${percent}%`;
+  const percent = Math.round((trialHistory.length / MAX_TRIALS) * 100);
+  document.getElementById("progressFill").style.width = `${percent}%`;
 
-    trialStartTime = Date.now();
+  trialStartTime = Date.now();
 }
+
 
 
     function submitResponse(chosenSame) {
