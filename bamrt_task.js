@@ -1,6 +1,6 @@
 window.startBAMRT = function(participantId, yearGroup) {
     try {
-        console.log(`[BAMRT WRAPPER_ver20] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
+        console.log(`[BAMRT WRAPPER_ver21] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
         if (!participantId || !yearGroup) {
             console.error('[BAMRT WRAPPER] ❌ Missing participantId or yearGroup');
         }
@@ -96,20 +96,83 @@ function internalStartBAMRT(participantId, yearGroup) {
         document.getElementById('differentButton').onclick = () => submitResponse(false);
     }
 
-    function fetchTrialsAndStart() {
-        fetch("bamrt_trials.json")
-            .then(r => r.json())
-            .then(data => {
-                trials = data;
-                availableIndices = [...trials.keys()];
-                console.log(`✅ Loaded ${trials.length} trials`);
-                initializeTask();
-            })
-            .catch(err => {
-                console.error("❌ Failed to load trial data", err);
-                alert("Failed to load trial data.");
-            });
+/**
+ * computeDifficulty(tr) returns a numeric difficulty for ANY trial object,
+ * based on these fields in bamrt_trials.json:
+ *   tr.dimensionality  → "2D" | "3D" | "4D"
+ *   tr.shape           → integer
+ *   tr.x, tr.y, tr.z   → rotation angles (in degrees 0–180)
+ *   tr.mirrored        → boolean
+ *
+ * Once you call this, you no longer need the JSON’s hard-wired "difficulty" values.
+ * To tweak scoring, just adjust the numbers inside this function.
+ */
+function computeDifficulty(tr) {
+  // ── 2D: keep these very low so 2D is always easiest. ──
+  if (tr.dimensionality === "2D") {
+    const shape = tr.shape;          // (e.g. 1..5)
+    const angleZ = tr.z || 0;        // rotation about the 2D plane
+    const mirrorBonus = tr.mirrored ? 4 : 0;
+    // “2D base” = 10 + shape, rotation cost = 0.1·z
+    return 10 + shape + 0.1 * angleZ + mirrorBonus;
+  }
+
+  // ── 3D: the old linear fit you already have in JSON. ──
+  if (tr.dimensionality === "3D") {
+    const shape = tr.shape;         // 1..10
+    const angleZ = tr.z || 0;       // single-plane rotation
+    const mirrorBonus = tr.mirrored ? 10 : 0;
+    // 19.2 + 1.8·shape + 0.2·z + (mirrored?10:0)
+    return 19.2 + 1.8 * shape + 0.2 * angleZ + mirrorBonus;
+  }
+
+  // ── 4D: slightly lower the rotation weight so “easy 4D” fall below mid-range 3D. ──
+  if (tr.dimensionality === "4D") {
+    const shape = tr.shape;                // 1..10
+    const angle1 = tr.x || 0;              // first plane’s rotation
+    const angle2 = tr.z || 0;              // second plane’s rotation
+    const mirrorBonus = tr.mirrored ? 15 : 0;
+
+    // Force “4D shape 4 @ (0,0)” = 30 (so it matches “3D shape 6 @ 0”).
+    // All other shapes get “base4D = 24 + shapeID,” which is slightly lower
+    // than 26+shapeID used previously. Then rotation-weight R4D=0.25.
+    let base4D;
+    if (shape === 4) {
+      base4D = 30;
+    } else {
+      base4D = 24 + shape;
+      // so “4D shape 1 @ (0,0)” = 25, and at (30,30) it becomes 40 instead of 46.
     }
+
+    // combine base + rotation cost + mirrored
+    return base4D + 0.25 * (angle1 + angle2) + mirrorBonus;
+  }
+
+  throw new Error("Unsupported dimensionality: " + tr.dimensionality);
+}
+
+
+	function fetchTrialsAndStart() {
+  fetch("bamrt_trials.json")
+    .then(r => r.json())
+    .then(data => {
+      trials = data;
+
+      // ─── Overwrite each trial’s difficulty with computeDifficulty(tr) ───
+      trials.forEach(tr => {
+        tr.difficulty = computeDifficulty(tr);
+      });
+      console.log("[BAMRT] difficulty values recomputed via formula.");
+
+      availableIndices = [...trials.keys()];
+      initializeTask();
+    })
+    .catch(err => {
+      console.error("❌ Failed to load trial data", err);
+      alert("Failed to load trial data.");
+    });
+}
+
 
     function initializeTask() {
         priorMean = ["1", "2"].includes(yearGroup) ? 15 : ["5", "6"].includes(yearGroup) ? 50 : 30;
