@@ -1,9 +1,8 @@
-// ─── BAMRT Task Script v36 ───
+// ─── BAMRT Task Script v36 (Responsive side-by-side images) ───
 
-// 1) Global launcher
-window.startBAMRT = function(participantId, yearGroup) {
+// 1) Global launcher\window.startBAMRT = function(participantId, yearGroup) {
     try {
-        console.log(`[BAMRT WRAPPER_v36] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
+        console.log(`[BAMRT WRAPPER_v37] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
         if (!participantId || !yearGroup) {
             console.error('[BAMRT WRAPPER] ❌ Missing participantId or yearGroup');
         }
@@ -65,18 +64,52 @@ function internalStartBAMRT(participantId, yearGroup) {
         return thetaGrid.reduce((sum, th, i) => sum + posterior[i] * (th - mean) ** 2, 0);
     }
 
-    // ─── DOM setup (responsive) ───
+    // ─── DOM setup (always side-by-side) ───
     function setupDOM() {
         document.body.innerHTML = `
             <style>
+              /* container padding */
               #taskContainer { padding:1em; box-sizing:border-box; }
-              #trial-container { display:flex; flex-direction:column; align-items:center; }
-              #progressBar { width:90vw; max-width:600px; height:20px; background:#ddd; margin:1em 0; }
+
+              /* always side-by-side, wrapping if tiny */
+              #trial-container {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                align-items: center;
+                gap: 1em;
+              }
+
+              /* each image takes half width minus gap */
+              #trial-container img {
+                flex: 1 1 calc(50% - 1em);
+                max-width: calc(50% - 1em);
+                height: auto;
+              }
+
+              /* progress bar */
+              #progressBar {
+                width:100vw;
+                max-width:600px;
+                height:20px;
+                background:#ddd;
+                margin:1em 0;
+              }
               #progressFill { height:100%; width:0%; background:#4caf50; }
-              #trial-container img { max-width:90vw; height:auto; margin:0.5em 0; }
-              .button-container { display:flex; gap:1em; margin:1em 0; }
-              .button-container button { padding:0.8em 1.2em; font-size:1rem; }
+
+              /* buttons */
+              .button-container {
+                display:flex;
+                justify-content:center;
+                gap:1em;
+                margin:1em 0;
+              }
+              .button-container button {
+                padding:0.8em 1.2em;
+                font-size:1rem;
+              }
             </style>
+
             <div id="taskContainer">
               <div id="trial-container">
                 <div id="progressBar"><div id="progressFill"></div></div>
@@ -109,7 +142,7 @@ function internalStartBAMRT(participantId, yearGroup) {
         throw new Error("Unsupported dimensionality: " + tr.dimensionality);
     }
 
-    // ─── Fetch & initialize ───
+    // ─── Fetch & start ───
     function fetchTrialsAndStart() {
         fetch("bamrt_trials.json")
           .then(r => r.json())
@@ -135,13 +168,12 @@ function internalStartBAMRT(participantId, yearGroup) {
         showTrial();
     }
 
-    // ─── Select next index via boosted‐Fisher ───
+    // ─── Select next via boosted Fisher ───
     function selectNextIndex() {
         if (!availableIndices.length) return -1;
         const mean = posteriorMean(), sd = Math.sqrt(posteriorVariance());
         const targetTheta = mean + 0.5*sd;
-        let bestIdx = availableIndices[0],
-            bestF = fisherInfo(targetTheta, trials[bestIdx].difficulty);
+        let bestIdx = availableIndices[0], bestF = fisherInfo(targetTheta, trials[bestIdx].difficulty);
         for (let idx of availableIndices.slice(1)) {
             const f = fisherInfo(targetTheta, trials[idx].difficulty);
             if (f > bestF) { bestF = f; bestIdx = idx; }
@@ -149,7 +181,7 @@ function internalStartBAMRT(participantId, yearGroup) {
         return bestIdx;
     }
 
-    // ─── Render trial ───
+    // ─── Render a trial ───
     function renderTrial(idx) {
         const t = trials[idx];
         document.getElementById("trialNumber").textContent      = trialHistory.length + 1;
@@ -161,65 +193,44 @@ function internalStartBAMRT(participantId, yearGroup) {
         trialStartTime = Date.now();
     }
 
-    // ─── Main adaptive loop with 30–50 enforcement ───
+    // ─── Main loop (30–50 enforcement) ───
     function showTrial() {
         const variance = posteriorVariance();
-        // 1) hard‐min of 30 trials
         if (trialHistory.length < 30) {
-            currentIndex = selectNextIndex();
-            if (currentIndex === -1) return endTask();
+            currentIndex = selectNextIndex(); if (currentIndex===-1) return endTask();
             renderTrial(currentIndex);
             return;
         }
-        // 2) allow var‐stop only after 30
-        if (trialHistory.length >= 30 && variance < 5) {
+        if (trialHistory.length>=30 && variance<5) {
             console.log(`[BAMRT] Variance ${variance.toFixed(2)} < 5 after ${trialHistory.length} trials → end`);
             return endTask();
         }
-        // 3) max‐trials
-        if (trialHistory.length >= MAX_TRIALS) return endTask();
+        if (trialHistory.length>=MAX_TRIALS) return endTask();
 
-        // 4) ceiling & zero‐info
-        const mean = posteriorMean(), sd = Math.sqrt(variance),
-              targetTheta = mean + 0.5*sd,
-              maxDiff = Math.max(...availableIndices.map(i=>trials[i].difficulty));
-
-        if (targetTheta >= maxDiff - 0.1) {
-            console.log(`[BAMRT] targetθ≥maxDiff → end`); return endTask();
-        }
+        const mean = posteriorMean(), sd=Math.sqrt(variance), targetTheta=mean+0.5*sd;
+        const maxDiff=Math.max(...availableIndices.map(i=>trials[i].difficulty));
+        if (targetTheta>=maxDiff-0.1) { console.log(`[BAMRT] targetθ≥maxDiff → end`); return endTask(); }
         if (!availableIndices.some(i=>Math.abs(trials[i].difficulty-mean)<=5)) {
             console.log(`[BAMRT] no items within ±5 of θ≈${mean.toFixed(2)} → end`);
             return endTask();
         }
 
-        // 5) otherwise pick & render
-        currentIndex = selectNextIndex();
-        if (currentIndex === -1) return endTask();
+        currentIndex = selectNextIndex(); if (currentIndex===-1) return endTask();
         renderTrial(currentIndex);
     }
 
-    // ─── Handle responses ───
+    // ─── Submit response ───
     function submitResponse(chosenSame) {
-        if (currentIndex === -1) return;
-        const t        = trials[currentIndex],
-              correct  = (chosenSame === !t.mirrored),
-              rt       = (Date.now()-trialStartTime)/1000;
-
+        if (currentIndex===-1) return;
+        const t = trials[currentIndex], correct=(chosenSame===!t.mirrored), rt=(Date.now()-trialStartTime)/1000;
         console.log(`🧪 Trial ${trialHistory.length+1} — Chose:${chosenSame},Mirrored:${t.mirrored},Correct:${correct}`);
-        updatePosterior(correct, t.difficulty);
-
+        updatePosterior(correct,t.difficulty);
         trialHistory.push({
-            trial:      trialHistory.length+1,
-            base:       t.base_image,
-            comp:       t.comparison_image,
-            correct:    correct?"Yes":"No",
-            difficulty: t.difficulty,
-            theta:      posteriorMean().toFixed(2),
-            variance:   posteriorVariance().toFixed(2),
-            info:       expectedFisherInfo(currentIndex).toFixed(2),
-            rt:         rt.toFixed(2)
+            trial:trialHistory.length+1, base:t.base_image, comp:t.comparison_image,
+            correct:correct?"Yes":"No", difficulty:t.difficulty,
+            theta:posteriorMean().toFixed(2), variance:posteriorVariance().toFixed(2),
+            info:expectedFisherInfo(currentIndex).toFixed(2), rt:rt.toFixed(2)
         });
-
         availableIndices = availableIndices.filter(i=>i!==currentIndex);
         showTrial();
     }
@@ -235,10 +246,10 @@ function internalStartBAMRT(participantId, yearGroup) {
         }
     }
 
-    // ─── Kick‐off ───
+    // ─── Initialize ───
     setupDOM();
     fetchTrialsAndStart();
 }
 
-// Alias for controller
+// Alias for external launch
 window.bamrtInternalStart = startBAMRT;
