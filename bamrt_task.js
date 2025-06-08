@@ -1,9 +1,9 @@
-// ─── BAMRT Task Script v48 ver48 (fixed full script + always side-by-side) ───
+// ─── BAMRT Task Script v49 Complete ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
   try {
-    console.log(`[BAMRT WRAPPER_ver45] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
+    console.log(`[BAMRT WRAPPER_ver43] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
     if (!participantId || !yearGroup) {
       console.error('[BAMRT WRAPPER] ❌ Missing participantId or yearGroup');
     }
@@ -13,7 +13,6 @@ window.startBAMRT = function(participantId, yearGroup) {
     document.body.innerHTML = `<h2>Something went wrong starting the BAMRT task.</h2><p>${err.message}</p>`;
   }
 };
-
 // Alias for controller compatibility
 window.bamrtInternalStart = window.startBAMRT;
 
@@ -33,7 +32,6 @@ function internalStartBAMRT(participantId, yearGroup) {
   let priorSD = 15;
   const MAX_TRIALS = 50;
 
-  // --- IRT & Bayesian helpers ---
   function normalPDF(x, mean, sd) {
     const z = (x - mean) / sd;
     return Math.exp(-0.5 * z * z) / (sd * Math.sqrt(2 * Math.PI));
@@ -68,57 +66,144 @@ function internalStartBAMRT(participantId, yearGroup) {
     return thetaGrid.reduce((sum, th, i) => sum + posterior[i] * (th - mean) ** 2, 0);
   }
 
-  // --- DOM setup ---
   function setupDOM() {
-  document.body.innerHTML = `
-    <style>
-      #taskContainer { padding:1em; }
-      #trial-container {
-        text-align:center;
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        align-items: center;
-        gap: 1em;
-      }
-      #progressBar { width:80%; height:20px; margin:1em auto; background:#ddd; }
-      #progressFill { height:100%; width:0%; background:#4caf50; }
-      /* Always side-by-side on wide, wrap buttons and labels */
-      #trial-container img {
-        display: inline-block;
-        max-width:45%;
-        margin:0.5em;
-        height:auto;
-      }
-      /* Buttons full row below images */
-      .button-container {
-        flex: 0 0 100%;
-        text-align: center;
-        margin:1em 0;
-      }
-      .button-container button {
-        margin:0 1em;
-        padding:0.5em 1em;
-      }
-      /* Trial info full row */
-      #trial-container p {
-        flex: 0 0 100%;
-        margin:0.2em 0;
-      }
-    </style>
-    <div id="taskContainer">
-      <div id="trial-container">
-        <div id="progressBar"><div id="progressFill"></div></div>
-        <img id="image1" src="" alt="Base Image" />
-        <img id="image2" src="" alt="Comparison Image" />
-        <div class="button-container">
-          <button id="sameButton">Same</button>
-          <button id="differentButton">Different</button>
+    document.body.innerHTML = `
+      <style>
+        #taskContainer { padding:1em; }
+        #trial-container {
+          text-align:center;
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          align-items: center;
+          gap: 1em;
+        }
+        #progressBar { width:80%; height:20px; margin:1em auto; background:#ddd; }
+        #progressFill { height:100%; width:0%; background:#4caf50; }
+        /* Always side-by-side on wide screens */
+        #trial-container img {
+          display: inline-block;
+          max-width:45%;
+          margin:0.5em;
+          height:auto;
+        }
+        /* Buttons full row below images */
+        .button-container {
+          flex: 0 0 100%;
+          text-align: center;
+          margin:1em 0;
+        }
+        .button-container button {
+          margin:0 1em;
+          padding:0.5em 1em;
+        }
+        /* Trial info full row */
+        #trial-container p {
+          flex: 0 0 100%;
+          margin:0.2em 0;
+        }
+      </style>
+      <div id="taskContainer">
+        <div id="trial-container">
+          <div id="progressBar"><div id="progressFill"></div></div>
+          <img id="image1" src="" alt="Base Image" />
+          <img id="image2" src="" alt="Comparison Image" />
+          <div class="button-container">
+            <button id="sameButton">Same</button>
+            <button id="differentButton">Different</button>
+          </div>
+          <p>Trial: <span id="trialNumber"></span></p>
+          <p>Difficulty: <span id="difficultyNumber"></span></p>
         </div>
-        <p>Trial: <span id="trialNumber"></span></p>
-        <p>Difficulty: <span id="difficultyNumber"></span></p>
-      </div>
-    </div>`;
-  document.getElementById('sameButton').onclick      = () => submitResponse(true);
-  document.getElementById('differentButton').onclick = () => submitResponse(false);
+      </div>`;
+    document.getElementById('sameButton').onclick      = () => submitResponse(true);
+    document.getElementById('differentButton').onclick = () => submitResponse(false);
+  }
+
+  function computeDifficulty(tr) {
+    if (tr.dimensionality === "2D") return 10 + tr.shape + 0.1*(tr.z||0) + (tr.mirrored?4:0);
+    if (tr.dimensionality === "3D") return 19.2 + 1.8*tr.shape + 0.2*(tr.z||0) + (tr.mirrored?10:0);
+    if (tr.dimensionality === "4D") {
+      let base4D = tr.shape===4?30:24+tr.shape;
+      return base4D + 0.25*((tr.x||0)+(tr.z||0)) + (tr.mirrored?15:0);
+    }
+    throw new Error("Unsupported dimensionality: " + tr.dimensionality);
+  }
+
+  function fetchTrialsAndStart() {
+    fetch("bamrt_trials.json")
+      .then(r => r.json())
+      .then(data => {
+        trials = data;
+        trials.forEach(tr => tr.difficulty = computeDifficulty(tr));
+        console.log("[BAMRT] difficulty values recomputed.");
+        availableIndices = [...trials.keys()];
+        initializeTask();
+      })
+      .catch(err => { console.error("Failed to load trials", err); alert("Failed to load trials."); });
+  }
+  function initializeTask() {
+    priorMean = ["1","2"].includes(yearGroup)?15:(["5","6"].includes(yearGroup)?50:30);
+    posterior  = normalize(thetaGrid.map(th => normalPDF(th, priorMean, priorSD)));
+    trialHistory = [];
+    availableIndices = [...trials.keys()];
+    showTrial();
+  }
+  function selectNextIndex() {
+    if (!availableIndices.length) return -1;
+    const mean = posteriorMean(), sd = Math.sqrt(posteriorVariance());
+    const targetTheta = mean + 0.5 * sd;
+    let best = availableIndices[0], bestF = fisherInfo(targetTheta, trials[best].difficulty);
+    availableIndices.forEach(idx => {
+      const f = fisherInfo(targetTheta, trials[idx].difficulty);
+      if (f > bestF) { bestF = f; best = idx; }
+    });
+    return best;
+  }
+  function renderTrial(idx) {
+    const t = trials[idx];
+    document.getElementById("trialNumber").textContent     = trialHistory.length + 1;
+    document.getElementById("difficultyNumber").textContent = t.difficulty.toFixed(2);
+    document.getElementById("image1").src = `images/${t.base_image}`;
+    document.getElementById("image2").src = `images/${t.comparison_image}`;
+    document.getElementById("progressFill").style.width = `${Math.round((trialHistory.length/ MAX_TRIALS)*100)}%`;
+    trialStartTime = Date.now();
+  }
+  function showTrial() {
+    const varian = posteriorVariance();
+    if (trialHistory.length < 30) {
+      currentIndex = selectNextIndex(); if (currentIndex < 0) return endTask();
+      renderTrial(currentIndex); return;
+    }
+    if (trialHistory.length >= 30 && varian < 5) return endTask();
+    if (trialHistory.length >= MAX_TRIALS) return endTask();
+    currentIndex = selectNextIndex(); if (currentIndex < 0) return endTask();
+    renderTrial(currentIndex);
+  }
+  function submitResponse(chosenSame) {
+    if (currentIndex < 0) return;
+    const t = trials[currentIndex];
+    const correct = (chosenSame === !t.mirrored);
+    updatePosterior(correct, t.difficulty);
+    trialHistory.push({
+      trial:   trialHistory.length + 1,
+      base:    t.base_image,
+      comp:    t.comparison_image,
+      correct: correct ? "Yes" : "No",
+      difficulty: t.difficulty,
+      theta:    posteriorMean().toFixed(2),
+      variance: posteriorVariance().toFixed(2),
+      info:     expectedFisherInfo(currentIndex).toFixed(2),
+      rt:       ((Date.now() - trialStartTime)/1000).toFixed(2)
+    });
+    availableIndices = availableIndices.filter(i => i !== currentIndex);
+    showTrial();
+  }
+  function endTask() {
+    document.body.innerHTML = '<h2>BAMRT Task Complete. Uploading results...</h2>';
+    if (typeof window.controllerBAMRTCallback === 'function') window.controllerBAMRTCallback(trialHistory);
+  }
+
+  setupDOM();
+  fetchTrialsAndStart();
 }
