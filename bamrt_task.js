@@ -1,9 +1,9 @@
-// ─── BAMRT Task Script v41 (Base PC side-by-side, mobile stack CSS) ───
+// ─── BAMRT Task Script v42 (Base PC side-by-side, mobile stack CSS) ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
     try {
-        console.log(`[BAMRT WRAPPER_v41] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
+        console.log(`[BAMRT WRAPPER_v42] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
         if (!participantId || !yearGroup) {
             console.error('[BAMRT WRAPPER] ❌ Missing participantId or yearGroup');
         }
@@ -70,69 +70,54 @@ function internalStartBAMRT(participantId, yearGroup) {
 
     // DOM setup: side-by-side on PC, stack under 600px
     function setupDOM() {
-        document.body.innerHTML = `
-            <style>
-              #taskContainer { padding:1em; box-sizing:border-box; }
-              #trial-container {
-                display: flex;
-                flex-wrap: nowrap;
-                justify-content: center;
-                align-items: center;
-                gap: 1em;
-              }
-              #trial-container img {
-                width: calc(50% - 1em);
-                max-width: calc(50% - 1em);
-                height: auto;
-              }
-              @media (max-width: 600px) {
-                #trial-container {
-                  flex-direction: column;
-                }
-                #trial-container img {
-                  width: 100%;
-                  max-width: 100%;
-                }
-              }
-              #progressBar { width:80%; height:20px; margin:1em auto; background:#ddd; }
-              #progressFill { height:100%; width:0%; background:#4caf50; }
-              .button-container { display:flex; gap:1em; justify-content:center; margin:1em 0; }
-              .button-container button { padding:0.8em 1.2em; font-size:1rem; }
-            </style>
-            <div id="taskContainer">
-              <div id="trial-container">
-                <div id="progressBar"><div id="progressFill"></div></div>
-                <img id="image1" src="" alt="Base Image" />
-                <img id="image2" src="" alt="Comparison Image" />
-                <div class="button-container">
-                  <button id="sameButton">Same</button>
-                  <button id="differentButton">Different</button>
-                </div>
-                <p>Trial: <span id="trialNumber"></span></p>
-                <p>Difficulty: <span id="difficultyNumber"></span></p>
-              </div>
-            </div>`;
-        document.getElementById('sameButton').onclick = () => submitResponse(true);
-        document.getElementById('differentButton').onclick = () => submitResponse(false);
-    }
+    document.body.innerHTML = `
+        <style>
+          #taskContainer { padding:1em; box-sizing:border-box; }
+          #trial-container {
+            display: flex;
+            flex-wrap: nowrap;
+            justify-content: center;
+            align-items: center;
+            gap: 1em;
+          }
+          #trial-container img {
+            width: calc(50% - 1em);
+            max-width: calc(50% - 1em);
+            height: auto;
+          }
+          /* Stack vertically only on small screens */
+          @media (max-width: 600px) {
+            #trial-container {
+              flex-direction: column;
+            }
+            #trial-container img {
+              width: 100%;
+              max-width: 100%;
+            }
+          }
+          #progressBar { width:80%; height:20px; margin:1em auto; background:#ddd; }
+          #progressFill { height:100%; width:0%; background:#4caf50; }
+          .button-container { display:flex; gap:1em; justify-content:center; margin:1em 0; }
+          .button-container button { padding:0.8em 1.2em; font-size:1rem; }
+        </style>
+        <div id="taskContainer">
+          <div id="trial-container">
+            <div id="progressBar"><div id="progressFill"></div></div>
+            <img id="image1" src="" alt="Base Image" />
+            <img id="image2" src="" alt="Comparison Image" />
+            <div class="button-container">
+              <button id="sameButton">Same</button>
+              <button id="differentButton">Different</button>
+            </div>
+            <p>Trial: <span id="trialNumber"></span></p>
+            <p>Difficulty: <span id="difficultyNumber"></span></p>
+          </div>
+        </div>`;
+    document.getElementById('sameButton').onclick = () => submitResponse(true);
+    document.getElementById('differentButton').onclick = () => submitResponse(false);
+}
 
-    // Difficulty computation
-    function computeDifficulty(tr) {
-        if (tr.dimensionality === "2D") {
-            return 10 + tr.shape + 0.1 * (tr.z || 0) + (tr.mirrored ? 4 : 0);
-        }
-        if (tr.dimensionality === "3D") {
-            return 19.2 + 1.8 * tr.shape + 0.2 * (tr.z || 0) + (tr.mirrored ? 10 : 0);
-        }
-        if (tr.dimensionality === "4D") {
-            let base4D = tr.shape === 4 ? 30 : 24 + tr.shape;
-            return base4D + 0.25 * ((tr.x || 0) + (tr.z || 0)) + (tr.mirrored ? 15 : 0);
-        }
-        throw new Error("Unsupported dimensionality: " + tr.dimensionality);
-    }
-
-    // Fetch trials and start
-    function fetchTrialsAndStart() {
+// Continue with existing fetchTrialsAndStart() {
         fetch("bamrt_trials.json")
             .then(r => r.json())
             .then(data => {
