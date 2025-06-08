@@ -1,4 +1,4 @@
-// ─── BAMRT Task Script v51 Complete ───
+// ─── BAMRT Task Script v52 Complete ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
@@ -149,40 +149,38 @@ function internalStartBAMRT(participantId, yearGroup) {
     availableIndices = [...trials.keys()];
     showTrial();
   }
-  
-function selectNextIndex() {
-  if (!availableIndices.length) return -1;
 
-  const mean     = posteriorMean();
-  const variance = posteriorVariance();
-  const sd       = Math.sqrt(variance);
+  function selectNextIndex() {
+    if (!availableIndices.length) return -1;
 
-  // VERY gentle for the first few trials
-  const earlyBoostTrials = 3;
-  const smallLambda      = 0.1;   // shrink that first jump
-  const normalLambda     = 0.5;
-  const lambda = trialHistory.length < earlyBoostTrials
-    ? smallLambda
-    : normalLambda;
+    const mean     = posteriorMean();
+    const variance = posteriorVariance();
+    const sd       = Math.sqrt(variance);
 
-  const targetTheta = mean + lambda * sd;
+    // VERY gentle for the first few trials
+    const earlyBoostTrials = 3;
+    const smallLambda      = 0.1;   // shrink that first jump
+    const normalLambda     = 0.5;
+    const lambda = trialHistory.length < earlyBoostTrials
+      ? smallLambda
+      : normalLambda;
 
-  // pick the item with max FisherInfo at targetTheta
-  let bestIdx    = availableIndices[0];
-  let bestFisher = fisherInfo(targetTheta, trials[bestIdx].difficulty);
-  for (let j = 1; j < availableIndices.length; j++) {
-    const idx = availableIndices[j];
-    const f   = fisherInfo(targetTheta, trials[idx].difficulty);
-    if (f > bestFisher) {
-      bestFisher = f;
-      bestIdx    = idx;
+    const targetTheta = mean + lambda * sd;
+
+    // pick the item with max FisherInfo at targetTheta
+    let bestIdx    = availableIndices[0];
+    let bestFisher = fisherInfo(targetTheta, trials[bestIdx].difficulty);
+    for (let j = 1; j < availableIndices.length; j++) {
+      const idx = availableIndices[j];
+      const f   = fisherInfo(targetTheta, trials[idx].difficulty);
+      if (f > bestFisher) {
+        bestFisher = f;
+        bestIdx    = idx;
+      }
     }
+    return bestIdx;
   }
-  return bestIdx;
-}
 
-
-  
   function renderTrial(idx) {
     const t = trials[idx];
     document.getElementById("trialNumber").textContent     = trialHistory.length + 1;
@@ -192,6 +190,7 @@ function selectNextIndex() {
     document.getElementById("progressFill").style.width = `${Math.round((trialHistory.length/ MAX_TRIALS)*100)}%`;
     trialStartTime = Date.now();
   }
+
   function showTrial() {
     const varian = posteriorVariance();
     if (trialHistory.length < 30) {
@@ -203,6 +202,7 @@ function selectNextIndex() {
     currentIndex = selectNextIndex(); if (currentIndex < 0) return endTask();
     renderTrial(currentIndex);
   }
+
   function submitResponse(chosenSame) {
     if (currentIndex < 0) return;
     const t = trials[currentIndex];
@@ -222,11 +222,57 @@ function selectNextIndex() {
     availableIndices = availableIndices.filter(i => i !== currentIndex);
     showTrial();
   }
+
   function endTask() {
     document.body.innerHTML = '<h2>BAMRT Task Complete. Uploading results...</h2>';
     if (typeof window.controllerBAMRTCallback === 'function') window.controllerBAMRTCallback(trialHistory);
   }
 
-  setupDOM();
+  setupDOM();                    // ← DOM is now live
+
+  // ── PRACTICE BLOCK (must run *before* loading real trials) ──
+  const practiceTrials = [
+    { base_image: "2D_1_X0_Y0_Z0.jpg", comparison_image: "2D_1_X0_Y0_Z10R.jpg", mirrored: true },
+    { base_image: "2D_1_X0_Y0_Z0.jpg", comparison_image: "2D_1_X0_Y0_Z20.jpg",   mirrored: false },
+    { base_image: "2D_1_X0_Y0_Z0.jpg", comparison_image: "2D_1_X0_Y0_Z130.jpg", mirrored: false }
+  ];
+  let practiceIdx = 0;
+
+  function runPractice() {
+    const t = practiceTrials[practiceIdx];
+    document.getElementById("trialNumber").textContent     = `Practice ${practiceIdx+1}`;
+    document.getElementById("difficultyNumber").textContent = "";
+    document.getElementById("image1").src                  = `images/${t.base_image}`;
+    document.getElementById("image2").src                  = `images/${t.comparison_image}`;
+  }
+
+  function handlePracticeResponse(chosenSame) {
+    const t = practiceTrials[practiceIdx];
+    if (chosenSame !== !t.mirrored) {
+      alert(
+        "Let’s check your understanding of the task.\n\n" +
+        "Ask the experimenter for help, then click OK to stop."
+      );
+      return;  // halts entirely
+    }
+    practiceIdx++;
+    if (practiceIdx < practiceTrials.length) {
+      runPractice();
+    } else {
+      // bind real-task handlers and start adaptive phase
+      document.getElementById('sameButton').onclick      = () => submitResponse(true);
+      document.getElementById('differentButton').onclick = () => submitResponse(false);
+      initializeTask();
+    }
+  }
+
+  // wire the buttons for practice
+  document.getElementById('sameButton').onclick      = () => handlePracticeResponse(true);
+  document.getElementById('differentButton').onclick = () => handlePracticeResponse(false);
+
+  runPractice();
+  // ── END PRACTICE BLOCK ──
+
+  // now load your real trial set
   fetchTrialsAndStart();
 }
