@@ -1,9 +1,9 @@
-// ─── BAMRT Task Script v44 (v44 baseline + always side-by-side) ───
+// ─── BAMRT Task Script v45 (baseline + always side-by-side) ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
   try {
-    console.log(`[BAMRT WRAPPER_ver44] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
+    console.log(`[BAMRT WRAPPER_ver45] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
     if (!participantId || !yearGroup) {
       console.error('[BAMRT WRAPPER] ❌ Missing participantId or yearGroup');
     }
@@ -67,31 +67,19 @@ function internalStartBAMRT(participantId, yearGroup) {
     return thetaGrid.reduce((sum, th, i) => sum + posterior[i] * (th - mean) ** 2, 0);
   }
 
-  function setupDOM() {
-  const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-  // Build CSS rule string based on mobile detection
-  const flexDirection = isMobile ? 'column' : 'row';
-  const imgWidth = isMobile ? '100%' : '45%';
-
+function setupDOM() {
   document.body.innerHTML = `
     <style>
       #taskContainer { padding:1em; }
-      #trial-container {
-        display: flex;
-        flex-wrap: nowrap;
-        justify-content: center;
-        align-items: center;
-        gap: 1em;
-        flex-direction: ${flexDirection};
-      }
-      #trial-container img {
-        display: inline-block;
-        width: ${imgWidth};
-        height: auto;
-        margin: 0.5em;
-      }
+      #trial-container { text-align:center; display:flex; flex-wrap:nowrap; justify-content:center; align-items:center; gap:1em; }
       #progressBar { width:80%; height:20px; margin:1em auto; background:#ddd; }
       #progressFill { height:100%; width:0%; background:#4caf50; }
+      /* ALWAYS side-by-side unless the viewport is under 500px wide */
+      #trial-container img { display:inline-block; max-width:45%; margin:0.5em; height:auto; }
+      @media (max-width: 500px) {
+        #trial-container { flex-direction: column; }
+        #trial-container img { max-width: 90%; }
+      }
       .button-container { margin:1em 0; }
       .button-container button { margin:0 1em; padding:0.5em 1em; }
     </style>
@@ -108,9 +96,10 @@ function internalStartBAMRT(participantId, yearGroup) {
         <p>Difficulty: <span id="difficultyNumber"></span></p>
       </div>
     </div>`;
-  document.getElementById('sameButton').onclick = () => submitResponse(true);
+  document.getElementById('sameButton').onclick      = () => submitResponse(true);
   document.getElementById('differentButton').onclick = () => submitResponse(false);
 }
+
 
 // Continue with existing fetchTrialsAndStart() {
     fetch("bamrt_trials.json")
