@@ -1,9 +1,9 @@
-// ─── BAMRT Task Script v38 (Responsive side-by-side images) ───
+// ─── BAMRT Task Script v39 (Responsive side-by-side images) ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
     try {
-        console.log(`[BAMRT WRAPPER_v38] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
+        console.log(`[BAMRT WRAPPER_v39] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
         if (!participantId || !yearGroup) {
             console.error('[BAMRT WRAPPER] ❌ Missing participantId or yearGroup');
         }
@@ -14,8 +14,10 @@ window.startBAMRT = function(participantId, yearGroup) {
     }
 };
 
-// Alias for controller compatibility
-window.bamrtInternalStart = window.startBAMRT;
+// Alias for controller compatibility — make sure this runs at top level
+window.bamrtInternalStart = function(participantId, yearGroup) {
+    window.startBAMRT(participantId, yearGroup);
+};
 
 function internalStartBAMRT(participantId, yearGroup) {
     console.log(`[BAMRT v010] Starting task for ${participantId}, Year ${yearGroup}`);
@@ -113,4 +115,115 @@ function internalStartBAMRT(participantId, yearGroup) {
     }
 
     // Fetch & start
-    function fetchTrials...</replacement>}]}
+    function fetchTrialsAndStart() {
+        fetch("bamrt_trials.json")
+          .then(r => r.json())
+          .then(data => {
+            trials = data;
+            trials.forEach(tr => tr.difficulty = computeDifficulty(tr));
+            console.log("[BAMRT] difficulty values recomputed via formula.");
+            availableIndices = [...trials.keys()];
+            initializeTask();
+          })
+          .catch(err => {
+            console.error("❌ Failed to load trial data", err);
+            alert("Failed to load trial data.");
+          });
+    }
+
+    function initializeTask() {
+        priorMean = ["1","2"].includes(yearGroup)?15:
+                    ["5","6"].includes(yearGroup)?50:30;
+        posterior = normalize(thetaGrid.map(th=>normalPDF(th, priorMean, priorSD)));
+        trialHistory = [];
+        availableIndices = [...trials.keys()];
+        showTrial();
+    }
+
+    // Select next via boosted Fisher
+    function selectNextIndex() {
+        if (!availableIndices.length) return -1;
+        const mean = posteriorMean(), sd = Math.sqrt(posteriorVariance());
+        const targetTheta = mean + 0.5*sd;
+        let bestIdx = availableIndices[0], bestF = fisherInfo(targetTheta, trials[bestIdx].difficulty);
+        for (let idx of availableIndices.slice(1)) {
+            const f = fisherInfo(targetTheta, trials[idx].difficulty);
+            if (f > bestF) { bestF = f; bestIdx = idx; }
+        }
+        return bestIdx;
+    }
+
+    // Render a trial
+    function renderTrial(idx) {
+        const t = trials[idx];
+        document.getElementById("trialNumber").textContent      = trialHistory.length + 1;
+        document.getElementById("difficultyNumber").textContent = t.difficulty.toFixed(2);
+        document.getElementById("image1").src                   = `images/${t.base_image}`;
+        document.getElementById("image2").src                   = `images/${t.comparison_image}`;
+        document.getElementById("progressFill").style.width     = `
+          ${Math.round((trialHistory.length/ MAX_TRIALS)*100)}%`;
+        trialStartTime = Date.now();
+    }
+
+    // Main loop (30–50 enforcement)
+    function showTrial() {
+        const variance = posteriorVariance();
+        if (trialHistory.length < 30) {
+            currentIndex = selectNextIndex(); if (currentIndex === -1) return endTask();
+            renderTrial(currentIndex);
+            return;
+        }
+        if (trialHistory.length >= 30 && variance < 5) {
+            console.log(`[BAMRT] Variance ${variance.toFixed(2)} < 5 after ${trialHistory.length} trials → end`);
+            return endTask();
+        }
+        if (trialHistory.length >= MAX_TRIALS) return endTask();
+
+        const mean = posteriorMean(), sd = Math.sqrt(variance), targetTheta = mean + 0.5*sd;
+        const maxDiff = Math.max(...availableIndices.map(i => trials[i].difficulty));
+        if (targetTheta >= maxDiff - 0.1) { console.log(`[BAMRT] targetθ ≥ maxDiff → end`); return endTask(); }
+        if (!availableIndices.some(i => Math.abs(trials[i].difficulty - mean) <= 5)) {
+            console.log(`[BAMRT] no items within ±5 of θ≈${mean.toFixed(2)} → end`);
+            return endTask();
+        }
+
+        currentIndex = selectNextIndex(); if (currentIndex === -1) return endTask();
+        renderTrial(currentIndex);
+    }
+
+    // Handle responses
+    function submitResponse(chosenSame) {
+        if (currentIndex === -1) return;
+        const t = trials[currentIndex], correct = (chosenSame === !t.mirrored), rt = (Date.now() - trialStartTime)/1000;
+        console.log(`🧪 Trial ${trialHistory.length+1} — Chose:${chosenSame},Mirrored:${t.mirrored},Correct:${correct}`);
+        updatePosterior(correct, t.difficulty);
+        trialHistory.push({
+            trial:     trialHistory.length+1,
+            base:      t.base_image,
+            comp:      t.comparison_image,
+            correct:   correct ? "Yes" : "No",
+            difficulty:t.difficulty,
+            theta:     posteriorMean().toFixed(2),
+            variance:  posteriorVariance().toFixed(2),
+            info:      expectedFisherInfo(currentIndex).toFixed(2),
+            rt:        rt.toFixed(2)
+        });
+        availableIndices = availableIndices.filter(i => i !== currentIndex);
+        showTrial();
+    }
+
+    // End task
+    function endTask() {
+        console.log(`[BAMRT v008] Task completed, uploading results.`);
+        document.body.innerHTML = '<h2>BAMRT Task Complete. Uploading results...</h2>';
+        if (typeof window.controllerBAMRTCallback === 'function') {
+            window.controllerBAMRTCallback(trialHistory);
+        } else {
+            console.warn('[BAMRT v008] No controller callback found for BAMRT');
+        }
+    }
+
+    // Initialize
+    setupDOM();
+    fetchTrialsAndStart();
+}
