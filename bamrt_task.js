@@ -1,4 +1,4 @@
-// ─── BAMRT Task Script v50 Complete ───
+// ─── BAMRT Task Script v51 Complete ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
@@ -149,18 +149,18 @@ function internalStartBAMRT(participantId, yearGroup) {
     availableIndices = [...trials.keys()];
     showTrial();
   }
-  function selectNextIndex() {
+  
+function selectNextIndex() {
   if (!availableIndices.length) return -1;
 
-  // compute mean & sd
   const mean     = posteriorMean();
   const variance = posteriorVariance();
   const sd       = Math.sqrt(variance);
 
-  // use a smaller boost at the start
-  const earlyBoostTrials = 5;
-  const smallLambda      = 0.2;   // gentler slope
-  const normalLambda     = 0.5;   // original
+  // VERY gentle for the first few trials
+  const earlyBoostTrials = 3;
+  const smallLambda      = 0.1;   // shrink that first jump
+  const normalLambda     = 0.5;
   const lambda = trialHistory.length < earlyBoostTrials
     ? smallLambda
     : normalLambda;
@@ -180,6 +180,7 @@ function internalStartBAMRT(participantId, yearGroup) {
   }
   return bestIdx;
 }
+
 
   
   function renderTrial(idx) {
