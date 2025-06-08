@@ -1,4 +1,4 @@
-// ─── BAMRT Task Script v49 Complete ───
+// ─── BAMRT Task Script v50 Complete ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
@@ -150,16 +150,38 @@ function internalStartBAMRT(participantId, yearGroup) {
     showTrial();
   }
   function selectNextIndex() {
-    if (!availableIndices.length) return -1;
-    const mean = posteriorMean(), sd = Math.sqrt(posteriorVariance());
-    const targetTheta = mean + 0.5 * sd;
-    let best = availableIndices[0], bestF = fisherInfo(targetTheta, trials[best].difficulty);
-    availableIndices.forEach(idx => {
-      const f = fisherInfo(targetTheta, trials[idx].difficulty);
-      if (f > bestF) { bestF = f; best = idx; }
-    });
-    return best;
+  if (!availableIndices.length) return -1;
+
+  // compute mean & sd
+  const mean     = posteriorMean();
+  const variance = posteriorVariance();
+  const sd       = Math.sqrt(variance);
+
+  // use a smaller boost at the start
+  const earlyBoostTrials = 5;
+  const smallLambda      = 0.2;   // gentler slope
+  const normalLambda     = 0.5;   // original
+  const lambda = trialHistory.length < earlyBoostTrials
+    ? smallLambda
+    : normalLambda;
+
+  const targetTheta = mean + lambda * sd;
+
+  // pick the item with max FisherInfo at targetTheta
+  let bestIdx    = availableIndices[0];
+  let bestFisher = fisherInfo(targetTheta, trials[bestIdx].difficulty);
+  for (let j = 1; j < availableIndices.length; j++) {
+    const idx = availableIndices[j];
+    const f   = fisherInfo(targetTheta, trials[idx].difficulty);
+    if (f > bestFisher) {
+      bestFisher = f;
+      bestIdx    = idx;
+    }
   }
+  return bestIdx;
+}
+
+  
   function renderTrial(idx) {
     const t = trials[idx];
     document.getElementById("trialNumber").textContent     = trialHistory.length + 1;
