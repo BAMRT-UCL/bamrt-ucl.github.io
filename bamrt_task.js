@@ -1,9 +1,9 @@
-// ─── BAMRT Task Script v43 (v34 baseline + always side-by-side) ───
+// ─── BAMRT Task Script v44 (v44 baseline + always side-by-side) ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
   try {
-    console.log(`[BAMRT WRAPPER_ver37] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
+    console.log(`[BAMRT WRAPPER_ver44] Called with participantId: ${participantId}, yearGroup: ${yearGroup}`);
     if (!participantId || !yearGroup) {
       console.error('[BAMRT WRAPPER] ❌ Missing participantId or yearGroup');
     }
@@ -68,45 +68,51 @@ function internalStartBAMRT(participantId, yearGroup) {
   }
 
   function setupDOM() {
-    document.body.innerHTML = `
-      <style>
-        #taskContainer { padding:1em; }
-        #trial-container { text-align:center; }
-        #progressBar { width:80%; height:20px; margin:1em auto; background:#ddd; }
-        #progressFill { height:100%; width:0%; background:#4caf50; }
-        /* Always side-by-side */
-        #trial-container img { display:inline-block; max-width:45%; margin:0.5em; height:auto; }
-        .button-container { margin:1em 0; }
-        .button-container button { margin:0 1em; padding:0.5em 1em; }
-      </style>
-      <div id="taskContainer">
-        <div id="trial-container">
-          <div id="progressBar"><div id="progressFill"></div></div>
-          <img id="image1" src="" alt="Base Image" />
-          <img id="image2" src="" alt="Comparison Image" />
-          <div class="button-container">
-            <button id="sameButton">Same</button>
-            <button id="differentButton">Different</button>
-          </div>
-          <p>Trial: <span id="trialNumber"></span></p>
-          <p>Difficulty: <span id="difficultyNumber"></span></p>
+  const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  // Build CSS rule string based on mobile detection
+  const flexDirection = isMobile ? 'column' : 'row';
+  const imgWidth = isMobile ? '100%' : '45%';
+
+  document.body.innerHTML = `
+    <style>
+      #taskContainer { padding:1em; }
+      #trial-container {
+        display: flex;
+        flex-wrap: nowrap;
+        justify-content: center;
+        align-items: center;
+        gap: 1em;
+        flex-direction: ${flexDirection};
+      }
+      #trial-container img {
+        display: inline-block;
+        width: ${imgWidth};
+        height: auto;
+        margin: 0.5em;
+      }
+      #progressBar { width:80%; height:20px; margin:1em auto; background:#ddd; }
+      #progressFill { height:100%; width:0%; background:#4caf50; }
+      .button-container { margin:1em 0; }
+      .button-container button { margin:0 1em; padding:0.5em 1em; }
+    </style>
+    <div id="taskContainer">
+      <div id="trial-container">
+        <div id="progressBar"><div id="progressFill"></div></div>
+        <img id="image1" src="" alt="Base Image" />
+        <img id="image2" src="" alt="Comparison Image" />
+        <div class="button-container">
+          <button id="sameButton">Same</button>
+          <button id="differentButton">Different</button>
         </div>
-      </div>`;
-    document.getElementById('sameButton').onclick = () => submitResponse(true);
-    document.getElementById('differentButton').onclick = () => submitResponse(false);
-  }
+        <p>Trial: <span id="trialNumber"></span></p>
+        <p>Difficulty: <span id="difficultyNumber"></span></p>
+      </div>
+    </div>`;
+  document.getElementById('sameButton').onclick = () => submitResponse(true);
+  document.getElementById('differentButton').onclick = () => submitResponse(false);
+}
 
-  function computeDifficulty(tr) {
-    if (tr.dimensionality === "2D") return 10 + tr.shape + 0.1*(tr.z||0) + (tr.mirrored?4:0);
-    if (tr.dimensionality === "3D") return 19.2 + 1.8*tr.shape + 0.2*(tr.z||0) + (tr.mirrored?10:0);
-    if (tr.dimensionality === "4D") {
-      let base4D = tr.shape===4?30:24+tr.shape;
-      return base4D + 0.25*((tr.x||0)+(tr.z||0)) + (tr.mirrored?15:0);
-    }
-    throw new Error("Unsupported dimensionality: " + tr.dimensionality);
-  }
-
-  function fetchTrialsAndStart() {
+// Continue with existing fetchTrialsAndStart() {
     fetch("bamrt_trials.json")
       .then(r => r.json())
       .then(data => {
