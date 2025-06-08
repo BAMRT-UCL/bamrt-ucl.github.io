@@ -1,4 +1,4 @@
-// ─── BAMRT Task Script v52 Complete ───
+// ─── BAMRT Task Script v54 Complete ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
@@ -259,20 +259,20 @@ function internalStartBAMRT(participantId, yearGroup) {
     if (practiceIdx < practiceTrials.length) {
       runPractice();
     } else {
-      // bind real-task handlers and start adaptive phase
-      document.getElementById('sameButton').onclick      = () => submitResponse(true);
-      document.getElementById('differentButton').onclick = () => submitResponse(false);
-      initializeTask();
-    }
+  // all practice correct → restore handlers and **then** load+start real trials
+  document.getElementById('sameButton').onclick      = () => submitResponse(true);
+  document.getElementById('differentButton').onclick = () => submitResponse(false);
+  fetchTrialsAndStart();
+}
+
   }
 
   // wire the buttons for practice
   document.getElementById('sameButton').onclick      = () => handlePracticeResponse(true);
   document.getElementById('differentButton').onclick = () => handlePracticeResponse(false);
 
-  runPractice();
-  // ── END PRACTICE BLOCK ──
+    runPractice();
+// ── END PRACTICE BLOCK ──
 
-  // now load your real trial set
-  fetchTrialsAndStart();
+// (real trials will start only after practice completes)
 }
