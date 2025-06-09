@@ -1,5 +1,5 @@
 
-// ─── BAMRT Task Script v71 Final ───
+// ─── BAMRT Task Script v72 Final ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
@@ -29,7 +29,7 @@ function internalStartBAMRT(participantId, yearGroup) {
   const guessRate = 0.5;
   const thetaGrid = Array.from({ length: 1501 }, (_, i) => i * 0.1);
   let posterior = [];
-  let priorMean = 30;
+  let priorMean = 15;
   let priorSD = 15;
   const MAX_TRIALS = 50;
 
@@ -144,7 +144,7 @@ function internalStartBAMRT(participantId, yearGroup) {
       .catch(err => { console.error("Failed to load trials", err); alert("Failed to load trials."); });
   }
   function initializeTask() {
-    priorMean = ["1","2"].includes(yearGroup)?15:(["5","6"].includes(yearGroup)?50:30);
+    priorMean = ["1","2"].includes(yearGroup)?15:(["5","6"].includes(yearGroup)?50:15);
     posterior = normalize(thetaGrid.map(th => normalPDF(th, priorMean, priorSD)));
     trialHistory = [];
     availableIndices = [...trials.keys()];
