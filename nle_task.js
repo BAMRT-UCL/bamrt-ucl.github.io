@@ -1,5 +1,5 @@
 window.startNLE = function(participantID, yearGroup, callback) {
-    console.log(`[NLE v011] Starting task for ${participantID}, Year ${yearGroup}`);
+    console.log(`[NLE v012] Starting task for ${participantID}, Year ${yearGroup}`);
 
     document.body.innerHTML = `
       <h1>Number Line Estimation Task</h1>
@@ -142,6 +142,10 @@ window.startNLE = function(participantID, yearGroup, callback) {
                 rt: responseTime.toFixed(2)
             });
             currentTrial++;
+			
+			// ✅ Update progress bar
+    document.getElementById('progressFill').style.width = `${Math.round((currentTrial / targetNumbers.length) * 100)}%`;
+			
             if (currentTrial < targetNumbers.length) {
                 displayTargetNumber();
                 currentEstimate = null;
