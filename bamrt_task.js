@@ -1,5 +1,5 @@
 
-// ─── BAMRT Task Script v72 Final ───
+// ─── BAMRT Task Script v73 Final ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
@@ -144,7 +144,20 @@ function internalStartBAMRT(participantId, yearGroup) {
       .catch(err => { console.error("Failed to load trials", err); alert("Failed to load trials."); });
   }
   function initializeTask() {
-    priorMean = ["1","2"].includes(yearGroup)?15:(["5","6"].includes(yearGroup)?50:15);
+ 	
+	// Fully customizable prior starting points by year group
+const yearGroupStartingPoints = {
+  "1": 15,
+  "2": 15,
+  "3": 15,
+  "4": 15,
+  "5": 15,
+  "6": 15
+};
+
+// Default to 15 if yearGroup not found
+priorMean = yearGroupStartingPoints[yearGroup] || 15;
+
     posterior = normalize(thetaGrid.map(th => normalPDF(th, priorMean, priorSD)));
     trialHistory = [];
     availableIndices = [...trials.keys()];
