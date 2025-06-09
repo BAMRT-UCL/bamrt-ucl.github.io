@@ -1,4 +1,4 @@
-// ─── BAMRT Task Script v65 ───
+// ─── BAMRT Task Script v66 ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
@@ -188,6 +188,13 @@ function internalStartBAMRT(participantId, yearGroup) {
   function submitResponse(chosenSame) {
     if (currentIndex < 0) return;
     const t = trials[currentIndex];
+
+    // Skip recording if it's a practice image
+    if (t.base_image.includes("2D_1_X0_Y0_Z0.jpg")) {
+      showTrial();
+      return;
+    }
+
     const correct = (chosenSame === !t.mirrored);
     updatePosterior(correct, t.difficulty);
     trialHistory.push({
