@@ -1,4 +1,4 @@
-// ─── BAMRT Task Script v56 Complete ───
+// ─── BAMRT Task Script v57 Complete ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
@@ -26,6 +26,7 @@ function internalStartBAMRT(participantId, yearGroup) {
   let trialStartTime = 0;
 
   const discrimination = 1.3;
+  const guessRate      = 0.5;   // for a 2-choice task, g=0.5
   const thetaGrid = Array.from({ length: 1501 }, (_, i) => i * 0.1);
   let posterior = [];
   let priorMean = 30;
@@ -45,7 +46,7 @@ function internalStartBAMRT(participantId, yearGroup) {
 const guessRate = 0.5;
 
 function irtProbability(th, b) {
-  // 3PL: P = g + (1–g)·σ(D(θ–b))
+  // 3-parameter logistic: P = g + (1–g)·σ(D(θ–b))
   const L = 1 / (1 + Math.exp(-discrimination * (th - b)));
   return guessRate + (1 - guessRate) * L;
 }
@@ -58,6 +59,7 @@ function fisherInfo(th, b) {
   // Fisher info = (dP/dθ)^2 / [P(1–P)]
   return (dPdTh * dPdTh) / (P * (1 - P));
 }
+
 
 
   
