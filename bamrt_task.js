@@ -1,4 +1,6 @@
-// ─── BAMRT Task Script v66 Final ───
+This one works v70
+
+// ─── BAMRT Task Script v63 Final ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
@@ -24,12 +26,12 @@ function internalStartBAMRT(participantId, yearGroup) {
   let currentIndex = -1;
   let trialStartTime = 0;
 
-  const discrimination = 1.5;
+  const discrimination = 1.3;
   const guessRate = 0.5;
   const thetaGrid = Array.from({ length: 1501 }, (_, i) => i * 0.1);
   let posterior = [];
   let priorMean = 30;
-  let priorSD = 12;
+  let priorSD = 15;
   const MAX_TRIALS = 50;
 
   function normalPDF(x, mean, sd) {
@@ -155,7 +157,7 @@ function internalStartBAMRT(participantId, yearGroup) {
     const mean = posteriorMean();
     const variance = posteriorVariance();
     const sd = Math.sqrt(variance);
-    const lambda = trialHistory.length < 3 ? 0.1 : 0.7;
+    const lambda = trialHistory.length < 3 ? 0.1 : 0.5;
     const targetTheta = mean + lambda * sd;
     let bestIdx = availableIndices[0];
     let bestFisher = fisherInfo(targetTheta, trials[bestIdx].difficulty);
@@ -192,30 +194,25 @@ function internalStartBAMRT(participantId, yearGroup) {
     renderTrial(currentIndex);
   }
 
- function submitResponse(chosenSame) {
-  if (currentIndex < 0) return;
-  const t = trials[currentIndex];
-  const correct = (chosenSame === !t.mirrored);
-
-  updatePosterior(correct, t.difficulty);
-
-  trialHistory.push({
-    trial: trialHistory.length + 1,
-    base: t.base_image,
-    comp: t.comparison_image,
-    correct: correct ? "Yes" : "No",
-    difficulty: t.difficulty,
-    theta: posteriorMean().toFixed(2),
-    variance: posteriorVariance().toFixed(2),
-    info: expectedFisherInfo(currentIndex).toFixed(2),
-    rt: ((Date.now() - trialStartTime) / 1000).toFixed(2)
-  });
-
-
-  availableIndices = availableIndices.filter(i => i !== currentIndex);
-  showTrial();
-}
-
+  function submitResponse(chosenSame) {
+    if (currentIndex < 0) return;
+    const t = trials[currentIndex];
+    const correct = (chosenSame === !t.mirrored);
+    updatePosterior(correct, t.difficulty);
+    trialHistory.push({
+      trial: trialHistory.length + 1,
+      base: t.base_image,
+      comp: t.comparison_image,
+      correct: correct ? "Yes" : "No",
+      difficulty: t.difficulty,
+      theta: posteriorMean().toFixed(2),
+      variance: posteriorVariance().toFixed(2),
+      info: expectedFisherInfo(currentIndex).toFixed(2),
+      rt: ((Date.now() - trialStartTime) / 1000).toFixed(2)
+    });
+    availableIndices = availableIndices.filter(i => i !== currentIndex);
+    showTrial();
+  }
 
   function endTask() {
     document.body.innerHTML = '<h2>BAMRT Task Complete. Uploading results...</h2>';
