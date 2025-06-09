@@ -1,4 +1,4 @@
-// ─── BAMRT Task Script v55 Complete ───
+// ─── BAMRT Task Script v56 Complete ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
@@ -44,21 +44,21 @@ function internalStartBAMRT(participantId, yearGroup) {
  // up near the top, choose a guess rate (for a 2-choice task this is usually 0.5):
 const guessRate = 0.5;
 
-// ─── replace your old irtProbability & fisherInfo with these ───
 function irtProbability(th, b) {
-  // 3PL: P = g + (1–g)·logistic
-  const L = 1 / (1 + Math.exp(-discrimination*(th - b)));
+  // 3PL: P = g + (1–g)·σ(D(θ–b))
+  const L = 1 / (1 + Math.exp(-discrimination * (th - b)));
   return guessRate + (1 - guessRate) * L;
 }
 
 function fisherInfo(th, b) {
-  // dP/dθ = (1–g)·D·L·(1–L)
-  const L = 1 / (1 + Math.exp(-discrimination*(th - b)));
+  // derivative of P wrt θ
+  const L = 1 / (1 + Math.exp(-discrimination * (th - b)));
   const dPdTh = (1 - guessRate) * discrimination * L * (1 - L);
-  const P = guessRate + (1 - guessRate) * L;
-  // I = (dP/dθ)² / [P·(1–P)]
-  return dPdTh*dPdTh / (P*(1-P));
+  const P     = guessRate + (1 - guessRate) * L;
+  // Fisher info = (dP/dθ)^2 / [P(1–P)]
+  return (dPdTh * dPdTh) / (P * (1 - P));
 }
+
 
   
   function expectedFisherInfo(idx) {
