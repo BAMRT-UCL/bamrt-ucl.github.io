@@ -1,4 +1,4 @@
-// ─── BAMRT Task Script v59 Complete ───
+// ─── BAMRT Task Script v60 Complete ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
@@ -129,7 +129,7 @@ function fisherInfo(th, b) {
           <img id="image2" src="" alt="Comparison Image" />
           <div class="button-container">
             <button id="sameButton">Same</button>
-            <button id="differentButton">Different</button>
+            <button id="differentButton">Mirrored</button>
           </div>
           <p>Trial: <span id="trialNumber"></span></p>
           <p>Difficulty: <span id="difficultyNumber"></span></p>
@@ -248,6 +248,20 @@ function fisherInfo(th, b) {
   }
 
   setupDOM();                    // ← DOM is now live
+
+
+  // ── keyboard shortcuts for “s”=Same, “m”=Mirrored ──
+  window.addEventListener('keydown', e => {
+    // don’t hijack typing if they ever add inputs
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+    if (e.key === 's' || e.key === 'S') {
+      document.getElementById('sameButton').click();
+    }
+    if (e.key === 'm' || e.key === 'M') {
+      document.getElementById('differentButton').click();
+    }
+  });
 
   // ── PRACTICE BLOCK (must run *before* loading real trials) ──
   const practiceTrials = [
