@@ -1,4 +1,4 @@
-// ─── BAMRT Task Script v58 Complete ───
+// ─── BAMRT Task Script v59 Complete ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
@@ -49,13 +49,19 @@ function irtProbability(th, b) {
 }
 
 function fisherInfo(th, b) {
-  // derivative of P wrt θ
-  const L = 1 / (1 + Math.exp(-discrimination * (th - b)));
-  const dPdTh = (1 - guessRate) * discrimination * L * (1 - L);
+  // raw logistic
+  let L = 1 / (1 + Math.exp(-discrimination * (th - b)));
+  // clamp to [ε, 1−ε]
+  const eps = 1e-6;
+  L = Math.min(Math.max(L, eps), 1 - eps);
+
+  // 3PL
   const P     = guessRate + (1 - guessRate) * L;
-  // Fisher info = (dP/dθ)^2 / [P(1–P)]
+  const dPdTh = (1 - guessRate) * discrimination * L * (1 - L);
+
   return (dPdTh * dPdTh) / (P * (1 - P));
 }
+
 
 
 
