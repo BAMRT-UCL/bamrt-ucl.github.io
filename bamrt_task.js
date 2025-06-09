@@ -1,4 +1,4 @@
-// ─── BAMRT Task Script v65 Final ───
+// ─── BAMRT Task Script v66 Final ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
@@ -211,17 +211,7 @@ function internalStartBAMRT(participantId, yearGroup) {
     rt: ((Date.now() - trialStartTime) / 1000).toFixed(2)
   });
 
-  // 🧠 Maxed-out stopping rule:
-  const theta = posteriorMean();
-  if (theta > 90 && trialHistory.length >= 5) {
-    const last5 = trialHistory.slice(-5);
-    const maxedOut = last5.every(trial => trial.correct === "Yes" && trial.difficulty > 85);
-    if (maxedOut) {
-      console.log('[BAMRT] ⛰️ Participant maxed out – ending task early.');
-      endTaskEarly("You’ve completed the hardest questions – task finished!");
-      return;
-    }
-  }
+   }
 
   availableIndices = availableIndices.filter(i => i !== currentIndex);
   showTrial();
