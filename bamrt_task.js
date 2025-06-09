@@ -1,4 +1,4 @@
-// ─── BAMRT Task Script v62 Complete ───
+// ─── BAMRT Task Script v63 Complete ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
@@ -247,7 +247,7 @@ function fisherInfo(th, b) {
     if (typeof window.controllerBAMRTCallback === 'function') window.controllerBAMRTCallback(trialHistory);
   }
 
-  setupDOM();                    // ← DOM is now live
+
 
 
  // ── keyboard shortcuts for “s”=Same, “m”=Mirrored ──
@@ -265,10 +265,12 @@ window.addEventListener('keydown', e => {
 });
 
 // ── PRACTICE BLOCK (must run *before* loading real trials) ──
-const practiceTrials = [
-  { base_image: "2D_1_X0_Y0_Z0.jpg", comparison_image: "2D_1_X0_Y0_Z10R.jpg", mirrored: true },
-  // …
+  const practiceTrials = [
+  { base_image: "2D_1_X0_Y0_Z0.jpg", comparison_image: "2D_1_X0_Y0_Z10R.jpg",  mirrored: true },
+  { base_image: "2D_1_X0_Y0_Z0.jpg", comparison_image: "2D_1_X0_Y0_Z20.jpg",   mirrored: false },
+  { base_image: "2D_1_X0_Y0_Z0.jpg", comparison_image: "2D_1_X0_Y0_Z130.jpg",  mirrored: false }
 ];
+
 let practiceIdx = 0;
 
   function runPractice() {
@@ -293,14 +295,24 @@ let practiceIdx = 0;
       runPractice();
     } else {
   // all practice correct → restore handlers and **then** load+start real trials
-  document.getElementById('sameButton').onclick      = () => submitResponse(true);
+   
+  document.body.innerHTML = `<h2>Great! Practice complete.</h2><p>Now the real task will begin.</p>`;
+  
+setTimeout(() => {
+  setupDOM();  // Rebuild task interface
+
+  document.getElementById('sameButton').onclick = () => submitResponse(true);
   document.getElementById('differentButton').onclick = () => submitResponse(false);
+
   fetchTrialsAndStart();
+}, 1500);
+
+
 }
 
   }
 
-  // wire the buttons for practice
+    // wire the buttons for practice
   document.getElementById('sameButton').onclick      = () => handlePracticeResponse(true);
   document.getElementById('differentButton').onclick = () => handlePracticeResponse(false);
 
