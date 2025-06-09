@@ -1,4 +1,4 @@
-// ─── BAMRT Task Script v61 Complete ───
+// ─── BAMRT Task Script v62 Complete ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
@@ -252,8 +252,8 @@ function fisherInfo(th, b) {
 
  // ── keyboard shortcuts for “s”=Same, “m”=Mirrored ──
 window.addEventListener('keydown', e => {
-  if (e.repeat) return;                             // ← ignore auto-repeats
-  // don’t hijack typing if they ever add inputs
+  // ignore repeats if the user holds the key down
+  if (e.repeat) return;
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
   if (e.key === 's' || e.key === 'S') {
