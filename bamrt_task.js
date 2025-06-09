@@ -1,4 +1,4 @@
-// ─── BAMRT Task Script v64 Final ───
+// ─── BAMRT Task Script v65 Final ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
@@ -192,25 +192,41 @@ function internalStartBAMRT(participantId, yearGroup) {
     renderTrial(currentIndex);
   }
 
-  function submitResponse(chosenSame) {
-    if (currentIndex < 0) return;
-    const t = trials[currentIndex];
-    const correct = (chosenSame === !t.mirrored);
-    updatePosterior(correct, t.difficulty);
-    trialHistory.push({
-      trial: trialHistory.length + 1,
-      base: t.base_image,
-      comp: t.comparison_image,
-      correct: correct ? "Yes" : "No",
-      difficulty: t.difficulty,
-      theta: posteriorMean().toFixed(2),
-      variance: posteriorVariance().toFixed(2),
-      info: expectedFisherInfo(currentIndex).toFixed(2),
-      rt: ((Date.now() - trialStartTime) / 1000).toFixed(2)
-    });
-    availableIndices = availableIndices.filter(i => i !== currentIndex);
-    showTrial();
+ function submitResponse(chosenSame) {
+  if (currentIndex < 0) return;
+  const t = trials[currentIndex];
+  const correct = (chosenSame === !t.mirrored);
+
+  updatePosterior(correct, t.difficulty);
+
+  trialHistory.push({
+    trial: trialHistory.length + 1,
+    base: t.base_image,
+    comp: t.comparison_image,
+    correct: correct ? "Yes" : "No",
+    difficulty: t.difficulty,
+    theta: posteriorMean().toFixed(2),
+    variance: posteriorVariance().toFixed(2),
+    info: expectedFisherInfo(currentIndex).toFixed(2),
+    rt: ((Date.now() - trialStartTime) / 1000).toFixed(2)
+  });
+
+  // 🧠 Maxed-out stopping rule:
+  const theta = posteriorMean();
+  if (theta > 90 && trialHistory.length >= 5) {
+    const last5 = trialHistory.slice(-5);
+    const maxedOut = last5.every(trial => trial.correct === "Yes" && trial.difficulty > 85);
+    if (maxedOut) {
+      console.log('[BAMRT] ⛰️ Participant maxed out – ending task early.');
+      endTaskEarly("You’ve completed the hardest questions – task finished!");
+      return;
+    }
   }
+
+  availableIndices = availableIndices.filter(i => i !== currentIndex);
+  showTrial();
+}
+
 
   function endTask() {
     document.body.innerHTML = '<h2>BAMRT Task Complete. Uploading results...</h2>';
