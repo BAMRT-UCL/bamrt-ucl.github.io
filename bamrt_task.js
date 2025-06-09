@@ -1,4 +1,4 @@
-// ─── BAMRT Task Script v63 Complete ───
+// ─── BAMRT Task Script v65 ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
@@ -13,7 +13,6 @@ window.startBAMRT = function(participantId, yearGroup) {
     document.body.innerHTML = `<h2>Something went wrong starting the BAMRT task.</h2><p>${err.message}</p>`;
   }
 };
-// Alias for controller compatibility
 window.bamrtInternalStart = window.startBAMRT;
 
 function internalStartBAMRT(participantId, yearGroup) {
@@ -26,7 +25,7 @@ function internalStartBAMRT(participantId, yearGroup) {
   let trialStartTime = 0;
 
   const discrimination = 1.3;
-  const guessRate      = 0.5;   // for a 2-choice task, g=0.5
+  const guessRate = 0.5;
   const thetaGrid = Array.from({ length: 1501 }, (_, i) => i * 0.1);
   let posterior = [];
   let priorMean = 30;
@@ -41,31 +40,18 @@ function internalStartBAMRT(participantId, yearGroup) {
     const sum = arr.reduce((a, b) => a + b, 0);
     return arr.map(x => x / sum);
   }
-  
-function irtProbability(th, b) {
-  // 3-parameter logistic: P = g + (1–g)·σ(D(θ–b))
-  const L = 1 / (1 + Math.exp(-discrimination * (th - b)));
-  return guessRate + (1 - guessRate) * L;
-}
-
-function fisherInfo(th, b) {
-  // raw logistic
-  let L = 1 / (1 + Math.exp(-discrimination * (th - b)));
-  // clamp to [ε, 1−ε]
-  const eps = 1e-6;
-  L = Math.min(Math.max(L, eps), 1 - eps);
-
-  // 3PL
-  const P     = guessRate + (1 - guessRate) * L;
-  const dPdTh = (1 - guessRate) * discrimination * L * (1 - L);
-
-  return (dPdTh * dPdTh) / (P * (1 - P));
-}
-
-
-
-
-  
+  function irtProbability(th, b) {
+    const L = 1 / (1 + Math.exp(-discrimination * (th - b)));
+    return guessRate + (1 - guessRate) * L;
+  }
+  function fisherInfo(th, b) {
+    let L = 1 / (1 + Math.exp(-discrimination * (th - b)));
+    const eps = 1e-6;
+    L = Math.min(Math.max(L, eps), 1 - eps);
+    const P = guessRate + (1 - guessRate) * L;
+    const dPdTh = (1 - guessRate) * discrimination * L * (1 - L);
+    return (dPdTh * dPdTh) / (P * (1 - P));
+  }
   function expectedFisherInfo(idx) {
     const b = trials[idx].difficulty;
     return thetaGrid.reduce((sum, th, i) => sum + posterior[i] * fisherInfo(th, b), 0);
@@ -99,14 +85,12 @@ function fisherInfo(th, b) {
         }
         #progressBar { width:80%; height:20px; margin:1em auto; background:#ddd; }
         #progressFill { height:100%; width:0%; background:#4caf50; }
-        /* Always side-by-side on wide screens */
         #trial-container img {
           display: inline-block;
           max-width:45%;
           margin:0.5em;
           height:auto;
         }
-        /* Buttons full row below images */
         .button-container {
           flex: 0 0 100%;
           text-align: center;
@@ -116,7 +100,6 @@ function fisherInfo(th, b) {
           margin:0 1em;
           padding:0.5em 1em;
         }
-        /* Trial info full row */
         #trial-container p {
           flex: 0 0 100%;
           margin:0.2em 0;
@@ -135,8 +118,6 @@ function fisherInfo(th, b) {
           <p>Difficulty: <span id="difficultyNumber"></span></p>
         </div>
       </div>`;
-    document.getElementById('sameButton').onclick      = () => submitResponse(true);
-    document.getElementById('differentButton').onclick = () => submitResponse(false);
   }
 
   function computeDifficulty(tr) {
@@ -155,12 +136,12 @@ function fisherInfo(th, b) {
       .then(data => {
         trials = data;
         trials.forEach(tr => tr.difficulty = computeDifficulty(tr));
-        console.log("[BAMRT] difficulty values recomputed.");
         availableIndices = [...trials.keys()];
         initializeTask();
       })
       .catch(err => { console.error("Failed to load trials", err); alert("Failed to load trials."); });
   }
+
   function initializeTask() {
     priorMean = ["1","2"].includes(yearGroup)?15:(["5","6"].includes(yearGroup)?50:30);
     posterior  = normalize(thetaGrid.map(th => normalPDF(th, priorMean, priorSD)));
@@ -171,38 +152,19 @@ function fisherInfo(th, b) {
 
   function selectNextIndex() {
     if (!availableIndices.length) return -1;
-
-    const mean     = posteriorMean();
-    const variance = posteriorVariance();
-    const sd       = Math.sqrt(variance);
-
-    // VERY gentle for the first few trials
-    const earlyBoostTrials = 3;
-    const smallLambda      = 0.1;   // shrink that first jump
-    const normalLambda     = 0.5;
-    const lambda = trialHistory.length < earlyBoostTrials
-      ? smallLambda
-      : normalLambda;
-
+    const mean = posteriorMean();
+    const sd = Math.sqrt(posteriorVariance());
+    const lambda = trialHistory.length < 3 ? 0.1 : 0.5;
     const targetTheta = mean + lambda * sd;
-
-    // pick the item with max FisherInfo at targetTheta
-    let bestIdx    = availableIndices[0];
-    let bestFisher = fisherInfo(targetTheta, trials[bestIdx].difficulty);
-    for (let j = 1; j < availableIndices.length; j++) {
-      const idx = availableIndices[j];
-      const f   = fisherInfo(targetTheta, trials[idx].difficulty);
-      if (f > bestFisher) {
-        bestFisher = f;
-        bestIdx    = idx;
-      }
-    }
-    return bestIdx;
+    return availableIndices.reduce((bestIdx, idx) => {
+      const f = fisherInfo(targetTheta, trials[idx].difficulty);
+      return f > fisherInfo(targetTheta, trials[bestIdx].difficulty) ? idx : bestIdx;
+    }, availableIndices[0]);
   }
 
   function renderTrial(idx) {
     const t = trials[idx];
-    document.getElementById("trialNumber").textContent     = trialHistory.length + 1;
+    document.getElementById("trialNumber").textContent = trialHistory.length + 1;
     document.getElementById("difficultyNumber").textContent = t.difficulty.toFixed(2);
     document.getElementById("image1").src = `images/${t.base_image}`;
     document.getElementById("image2").src = `images/${t.comparison_image}`;
@@ -211,14 +173,15 @@ function fisherInfo(th, b) {
   }
 
   function showTrial() {
-    const varian = posteriorVariance();
     if (trialHistory.length < 30) {
-      currentIndex = selectNextIndex(); if (currentIndex < 0) return endTask();
+      currentIndex = selectNextIndex();
+      if (currentIndex < 0) return endTask();
       renderTrial(currentIndex); return;
     }
-    if (trialHistory.length >= 30 && varian < 5) return endTask();
+    if (trialHistory.length >= 30 && posteriorVariance() < 5) return endTask();
     if (trialHistory.length >= MAX_TRIALS) return endTask();
-    currentIndex = selectNextIndex(); if (currentIndex < 0) return endTask();
+    currentIndex = selectNextIndex();
+    if (currentIndex < 0) return endTask();
     renderTrial(currentIndex);
   }
 
@@ -228,15 +191,15 @@ function fisherInfo(th, b) {
     const correct = (chosenSame === !t.mirrored);
     updatePosterior(correct, t.difficulty);
     trialHistory.push({
-      trial:   trialHistory.length + 1,
-      base:    t.base_image,
-      comp:    t.comparison_image,
+      trial: trialHistory.length + 1,
+      base: t.base_image,
+      comp: t.comparison_image,
       correct: correct ? "Yes" : "No",
       difficulty: t.difficulty,
-      theta:    posteriorMean().toFixed(2),
+      theta: posteriorMean().toFixed(2),
       variance: posteriorVariance().toFixed(2),
-      info:     expectedFisherInfo(currentIndex).toFixed(2),
-      rt:       ((Date.now() - trialStartTime)/1000).toFixed(2)
+      info: expectedFisherInfo(currentIndex).toFixed(2),
+      rt: ((Date.now() - trialStartTime)/1000).toFixed(2)
     });
     availableIndices = availableIndices.filter(i => i !== currentIndex);
     showTrial();
@@ -247,77 +210,53 @@ function fisherInfo(th, b) {
     if (typeof window.controllerBAMRTCallback === 'function') window.controllerBAMRTCallback(trialHistory);
   }
 
+  window.addEventListener('keydown', e => {
+    if (e.repeat) return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 's' || e.key === 'S') document.getElementById('sameButton').click();
+    if (e.key === 'm' || e.key === 'M') document.getElementById('differentButton').click();
+  });
 
-
-
- // ── keyboard shortcuts for “s”=Same, “m”=Mirrored ──
-window.addEventListener('keydown', e => {
-  // ignore repeats if the user holds the key down
-  if (e.repeat) return;
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-
-  if (e.key === 's' || e.key === 'S') {
-    document.getElementById('sameButton').click();
-  }
-  if (e.key === 'm' || e.key === 'M') {
-    document.getElementById('differentButton').click();
-  }
-});
-
-// ── PRACTICE BLOCK (must run *before* loading real trials) ──
+  // ── PRACTICE BLOCK ──
   const practiceTrials = [
-  { base_image: "2D_1_X0_Y0_Z0.jpg", comparison_image: "2D_1_X0_Y0_Z10R.jpg",  mirrored: true },
-  { base_image: "2D_1_X0_Y0_Z0.jpg", comparison_image: "2D_1_X0_Y0_Z20.jpg",   mirrored: false },
-  { base_image: "2D_1_X0_Y0_Z0.jpg", comparison_image: "2D_1_X0_Y0_Z130.jpg",  mirrored: false }
-];
+    { base_image: "2D_1_X0_Y0_Z0.jpg", comparison_image: "2D_1_X0_Y0_Z10R.jpg", mirrored: true },
+    { base_image: "2D_1_X0_Y0_Z0.jpg", comparison_image: "2D_1_X0_Y0_Z20.jpg", mirrored: false },
+    { base_image: "2D_1_X0_Y0_Z0.jpg", comparison_image: "2D_1_X0_Y0_Z130.jpg", mirrored: false }
+  ];
 
-let practiceIdx = 0;
+  let practiceIdx = 0;
 
   function runPractice() {
     const t = practiceTrials[practiceIdx];
-    document.getElementById("trialNumber").textContent     = `Practice ${practiceIdx+1}`;
+    document.getElementById("trialNumber").textContent = `Practice ${practiceIdx+1}`;
     document.getElementById("difficultyNumber").textContent = "";
-    document.getElementById("image1").src                  = `images/${t.base_image}`;
-    document.getElementById("image2").src                  = `images/${t.comparison_image}`;
+    document.getElementById("image1").src = `images/${t.base_image}`;
+    document.getElementById("image2").src = `images/${t.comparison_image}`;
   }
 
   function handlePracticeResponse(chosenSame) {
     const t = practiceTrials[practiceIdx];
     if (chosenSame !== !t.mirrored) {
-      alert(
-        "Let’s check your understanding of the task.\n\n" +
-        "Ask the experimenter for help, then click OK to stop."
-      );
-      return;  // halts entirely
+      alert("Let’s check your understanding of the task.\n\nAsk the experimenter for help, then click OK to stop.");
+      return;
     }
     practiceIdx++;
     if (practiceIdx < practiceTrials.length) {
       runPractice();
     } else {
-  // all practice correct → restore handlers and **then** load+start real trials
-   
-  document.body.innerHTML = `<h2>Great! Practice complete.</h2><p>Now the real task will begin.</p>`;
-  
-setTimeout(() => {
-  setupDOM();  // Rebuild task interface
-
-  document.getElementById('sameButton').onclick = () => submitResponse(true);
-  document.getElementById('differentButton').onclick = () => submitResponse(false);
-
-  fetchTrialsAndStart();
-}, 1500);
-
-
-}
-
+      document.body.innerHTML = `<h2>Great! Practice complete.</h2><p>Now the real task will begin.</p>`;
+      setTimeout(() => {
+        setupDOM();
+        document.getElementById('sameButton').onclick = () => submitResponse(true);
+        document.getElementById('differentButton').onclick = () => submitResponse(false);
+        fetchTrialsAndStart();
+      }, 1500);
+    }
   }
 
-    // wire the buttons for practice
-  document.getElementById('sameButton').onclick      = () => handlePracticeResponse(true);
+  setupDOM();
+  document.getElementById('sameButton').onclick = () => handlePracticeResponse(true);
   document.getElementById('differentButton').onclick = () => handlePracticeResponse(false);
-
-    runPractice();
-// ── END PRACTICE BLOCK ──
-
-// (real trials will start only after practice completes)
-}
+  runPractice();
+  // ── END PRACTICE BLOCK ──
+} // ← end internalStartBAMRT
