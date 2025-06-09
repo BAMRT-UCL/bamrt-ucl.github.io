@@ -211,7 +211,6 @@ function internalStartBAMRT(participantId, yearGroup) {
     rt: ((Date.now() - trialStartTime) / 1000).toFixed(2)
   });
 
-   }
 
   availableIndices = availableIndices.filter(i => i !== currentIndex);
   showTrial();
