@@ -1,6 +1,5 @@
-This one works v70
 
-// ─── BAMRT Task Script v63 Final ───
+// ─── BAMRT Task Script v70 Final ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
