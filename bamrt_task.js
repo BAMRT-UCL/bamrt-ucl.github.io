@@ -1,4 +1,4 @@
-// ─── BAMRT Task Script v54 Complete ───
+// ─── BAMRT Task Script v55 Complete ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
@@ -40,13 +40,27 @@ function internalStartBAMRT(participantId, yearGroup) {
     const sum = arr.reduce((a, b) => a + b, 0);
     return arr.map(x => x / sum);
   }
-  function irtProbability(th, b) {
-    return 1 / (1 + Math.exp(-discrimination * (th - b)));
-  }
-  function fisherInfo(th, b) {
-    const p = irtProbability(th, b);
-    return discrimination ** 2 * p * (1 - p);
-  }
+  
+ // up near the top, choose a guess rate (for a 2-choice task this is usually 0.5):
+const guessRate = 0.5;
+
+// ─── replace your old irtProbability & fisherInfo with these ───
+function irtProbability(th, b) {
+  // 3PL: P = g + (1–g)·logistic
+  const L = 1 / (1 + Math.exp(-discrimination*(th - b)));
+  return guessRate + (1 - guessRate) * L;
+}
+
+function fisherInfo(th, b) {
+  // dP/dθ = (1–g)·D·L·(1–L)
+  const L = 1 / (1 + Math.exp(-discrimination*(th - b)));
+  const dPdTh = (1 - guessRate) * discrimination * L * (1 - L);
+  const P = guessRate + (1 - guessRate) * L;
+  // I = (dP/dθ)² / [P·(1–P)]
+  return dPdTh*dPdTh / (P*(1-P));
+}
+
+  
   function expectedFisherInfo(idx) {
     const b = trials[idx].difficulty;
     return thetaGrid.reduce((sum, th, i) => sum + posterior[i] * fisherInfo(th, b), 0);
