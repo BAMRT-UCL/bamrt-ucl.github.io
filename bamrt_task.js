@@ -1,4 +1,4 @@
-// ─── BAMRT Task Script v66 ───
+// ─── BAMRT Task Script v63 Final ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
@@ -121,11 +121,11 @@ function internalStartBAMRT(participantId, yearGroup) {
   }
 
   function computeDifficulty(tr) {
-    if (tr.dimensionality === "2D") return 10 + tr.shape + 0.1*(tr.z||0) + (tr.mirrored?4:0);
-    if (tr.dimensionality === "3D") return 19.2 + 1.8*tr.shape + 0.2*(tr.z||0) + (tr.mirrored?10:0);
+    if (tr.dimensionality === "2D") return 10 + tr.shape + 0.1 * (tr.z || 0) + (tr.mirrored ? 4 : 0);
+    if (tr.dimensionality === "3D") return 19.2 + 1.8 * tr.shape + 0.2 * (tr.z || 0) + (tr.mirrored ? 10 : 0);
     if (tr.dimensionality === "4D") {
-      let base4D = tr.shape===4?30:24+tr.shape;
-      return base4D + 0.25*((tr.x||0)+(tr.z||0)) + (tr.mirrored?15:0);
+      let base4D = tr.shape === 4 ? 30 : 24 + tr.shape;
+      return base4D + 0.25 * ((tr.x || 0) + (tr.z || 0)) + (tr.mirrored ? 15 : 0);
     }
     throw new Error("Unsupported dimensionality: " + tr.dimensionality);
   }
@@ -136,15 +136,15 @@ function internalStartBAMRT(participantId, yearGroup) {
       .then(data => {
         trials = data;
         trials.forEach(tr => tr.difficulty = computeDifficulty(tr));
+        console.log("[BAMRT] difficulty values recomputed.");
         availableIndices = [...trials.keys()];
         initializeTask();
       })
       .catch(err => { console.error("Failed to load trials", err); alert("Failed to load trials."); });
   }
-
   function initializeTask() {
     priorMean = ["1","2"].includes(yearGroup)?15:(["5","6"].includes(yearGroup)?50:30);
-    posterior  = normalize(thetaGrid.map(th => normalPDF(th, priorMean, priorSD)));
+    posterior = normalize(thetaGrid.map(th => normalPDF(th, priorMean, priorSD)));
     trialHistory = [];
     availableIndices = [...trials.keys()];
     showTrial();
@@ -153,13 +153,21 @@ function internalStartBAMRT(participantId, yearGroup) {
   function selectNextIndex() {
     if (!availableIndices.length) return -1;
     const mean = posteriorMean();
-    const sd = Math.sqrt(posteriorVariance());
+    const variance = posteriorVariance();
+    const sd = Math.sqrt(variance);
     const lambda = trialHistory.length < 3 ? 0.1 : 0.5;
     const targetTheta = mean + lambda * sd;
-    return availableIndices.reduce((bestIdx, idx) => {
+    let bestIdx = availableIndices[0];
+    let bestFisher = fisherInfo(targetTheta, trials[bestIdx].difficulty);
+    for (let j = 1; j < availableIndices.length; j++) {
+      const idx = availableIndices[j];
       const f = fisherInfo(targetTheta, trials[idx].difficulty);
-      return f > fisherInfo(targetTheta, trials[bestIdx].difficulty) ? idx : bestIdx;
-    }, availableIndices[0]);
+      if (f > bestFisher) {
+        bestFisher = f;
+        bestIdx = idx;
+      }
+    }
+    return bestIdx;
   }
 
   function renderTrial(idx) {
@@ -168,33 +176,25 @@ function internalStartBAMRT(participantId, yearGroup) {
     document.getElementById("difficultyNumber").textContent = t.difficulty.toFixed(2);
     document.getElementById("image1").src = `images/${t.base_image}`;
     document.getElementById("image2").src = `images/${t.comparison_image}`;
-    document.getElementById("progressFill").style.width = `${Math.round((trialHistory.length/ MAX_TRIALS)*100)}%`;
+    document.getElementById("progressFill").style.width = `${Math.round((trialHistory.length / MAX_TRIALS) * 100)}%`;
     trialStartTime = Date.now();
   }
 
   function showTrial() {
+    const varian = posteriorVariance();
     if (trialHistory.length < 30) {
-      currentIndex = selectNextIndex();
-      if (currentIndex < 0) return endTask();
+      currentIndex = selectNextIndex(); if (currentIndex < 0) return endTask();
       renderTrial(currentIndex); return;
     }
-    if (trialHistory.length >= 30 && posteriorVariance() < 5) return endTask();
+    if (trialHistory.length >= 30 && varian < 5) return endTask();
     if (trialHistory.length >= MAX_TRIALS) return endTask();
-    currentIndex = selectNextIndex();
-    if (currentIndex < 0) return endTask();
+    currentIndex = selectNextIndex(); if (currentIndex < 0) return endTask();
     renderTrial(currentIndex);
   }
 
   function submitResponse(chosenSame) {
     if (currentIndex < 0) return;
     const t = trials[currentIndex];
-
-    // Skip recording if it's a practice image
-    if (t.base_image.includes("2D_1_X0_Y0_Z0.jpg")) {
-      showTrial();
-      return;
-    }
-
     const correct = (chosenSame === !t.mirrored);
     updatePosterior(correct, t.difficulty);
     trialHistory.push({
@@ -206,7 +206,7 @@ function internalStartBAMRT(participantId, yearGroup) {
       theta: posteriorMean().toFixed(2),
       variance: posteriorVariance().toFixed(2),
       info: expectedFisherInfo(currentIndex).toFixed(2),
-      rt: ((Date.now() - trialStartTime)/1000).toFixed(2)
+      rt: ((Date.now() - trialStartTime) / 1000).toFixed(2)
     });
     availableIndices = availableIndices.filter(i => i !== currentIndex);
     showTrial();
@@ -220,11 +220,10 @@ function internalStartBAMRT(participantId, yearGroup) {
   window.addEventListener('keydown', e => {
     if (e.repeat) return;
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-    if (e.key === 's' || e.key === 'S') document.getElementById('sameButton').click();
-    if (e.key === 'm' || e.key === 'M') document.getElementById('differentButton').click();
+    if (e.key === 's' || e.key === 'S') document.getElementById('sameButton')?.click();
+    if (e.key === 'm' || e.key === 'M') document.getElementById('differentButton')?.click();
   });
 
-  // ── PRACTICE BLOCK ──
   const practiceTrials = [
     { base_image: "2D_1_X0_Y0_Z0.jpg", comparison_image: "2D_1_X0_Y0_Z10R.jpg", mirrored: true },
     { base_image: "2D_1_X0_Y0_Z0.jpg", comparison_image: "2D_1_X0_Y0_Z20.jpg", mirrored: false },
@@ -235,7 +234,7 @@ function internalStartBAMRT(participantId, yearGroup) {
 
   function runPractice() {
     const t = practiceTrials[practiceIdx];
-    document.getElementById("trialNumber").textContent = `Practice ${practiceIdx+1}`;
+    document.getElementById("trialNumber").textContent = `Practice ${practiceIdx + 1}`;
     document.getElementById("difficultyNumber").textContent = "";
     document.getElementById("image1").src = `images/${t.base_image}`;
     document.getElementById("image2").src = `images/${t.comparison_image}`;
@@ -265,5 +264,4 @@ function internalStartBAMRT(participantId, yearGroup) {
   document.getElementById('sameButton').onclick = () => handlePracticeResponse(true);
   document.getElementById('differentButton').onclick = () => handlePracticeResponse(false);
   runPractice();
-  // ── END PRACTICE BLOCK ──
-} // ← end internalStartBAMRT
+}
