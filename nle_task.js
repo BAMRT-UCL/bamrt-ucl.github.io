@@ -5,6 +5,12 @@ window.startNLE = function(participantID, yearGroup, callback) {
       <h1>Number Line Estimation Task</h1>
       <p>You will be given a number and asked to indicate on the number line where you think this number should be placed.</p>
       <p id="practiceLabel">Practice Questions</p>
+	  
+	  <!-- ADD THE PROGRESS BAR RIGHT HERE -->
+  <div id="progressBar" style="width: 80%; height: 20px; background: #ddd; margin: 1em auto;">
+    <div id="progressFill" style="width: 0%; height: 100%; background: #4caf50;"></div>
+  </div>
+  
       <p>Target number: <strong id="targetNumber"></strong></p>
       <div id="numberLineContainer">
         <canvas id="numberLineCanvas"></canvas>
