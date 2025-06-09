@@ -1,5 +1,5 @@
 
-// ─── BAMRT Task Script v70 Final ───
+// ─── BAMRT Task Script v71 Final ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
@@ -197,7 +197,17 @@ function internalStartBAMRT(participantId, yearGroup) {
     if (currentIndex < 0) return;
     const t = trials[currentIndex];
     const correct = (chosenSame === !t.mirrored);
+	
+	  // Count how many incorrect answers already logged
+  const errorsSoFar = trialHistory.filter(tr => tr.correct === "No").length;
+
+  // Only update posterior if correct OR if already had 2+ errors
+  if (correct || errorsSoFar >= 2) {
     updatePosterior(correct, t.difficulty);
+  } else {
+    console.log(`[BAMRT] ❕ Incorrect answer forgiven (early trial). Errors so far: ${errorsSoFar}`);
+  }
+	
     trialHistory.push({
       trial: trialHistory.length + 1,
       base: t.base_image,
