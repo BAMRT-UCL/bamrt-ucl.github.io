@@ -1,4 +1,4 @@
-// ─── BAMRT Task Script v57 Complete ───
+// ─── BAMRT Task Script v58 Complete ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
@@ -42,9 +42,6 @@ function internalStartBAMRT(participantId, yearGroup) {
     return arr.map(x => x / sum);
   }
   
- // up near the top, choose a guess rate (for a 2-choice task this is usually 0.5):
-const guessRate = 0.5;
-
 function irtProbability(th, b) {
   // 3-parameter logistic: P = g + (1–g)·σ(D(θ–b))
   const L = 1 / (1 + Math.exp(-discrimination * (th - b)));
