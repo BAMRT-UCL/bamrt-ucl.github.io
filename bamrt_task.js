@@ -1,4 +1,4 @@
-// ─── BAMRT Task Script v63 Final ───
+// ─── BAMRT Task Script v64 Final ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
@@ -24,12 +24,12 @@ function internalStartBAMRT(participantId, yearGroup) {
   let currentIndex = -1;
   let trialStartTime = 0;
 
-  const discrimination = 1.3;
+  const discrimination = 1.5;
   const guessRate = 0.5;
   const thetaGrid = Array.from({ length: 1501 }, (_, i) => i * 0.1);
   let posterior = [];
   let priorMean = 30;
-  let priorSD = 15;
+  let priorSD = 12;
   const MAX_TRIALS = 50;
 
   function normalPDF(x, mean, sd) {
@@ -155,7 +155,7 @@ function internalStartBAMRT(participantId, yearGroup) {
     const mean = posteriorMean();
     const variance = posteriorVariance();
     const sd = Math.sqrt(variance);
-    const lambda = trialHistory.length < 3 ? 0.1 : 0.5;
+    const lambda = trialHistory.length < 3 ? 0.1 : 0.7;
     const targetTheta = mean + lambda * sd;
     let bestIdx = availableIndices[0];
     let bestFisher = fisherInfo(targetTheta, trials[bestIdx].difficulty);
