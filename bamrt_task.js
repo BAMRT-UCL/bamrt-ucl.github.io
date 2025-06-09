@@ -1,4 +1,4 @@
-// ─── BAMRT Task Script v60 Complete ───
+// ─── BAMRT Task Script v61 Complete ───
 
 // 1) Global launcher
 window.startBAMRT = function(participantId, yearGroup) {
@@ -250,26 +250,26 @@ function fisherInfo(th, b) {
   setupDOM();                    // ← DOM is now live
 
 
-  // ── keyboard shortcuts for “s”=Same, “m”=Mirrored ──
-  window.addEventListener('keydown', e => {
-    // don’t hijack typing if they ever add inputs
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+ // ── keyboard shortcuts for “s”=Same, “m”=Mirrored ──
+window.addEventListener('keydown', e => {
+  if (e.repeat) return;                             // ← ignore auto-repeats
+  // don’t hijack typing if they ever add inputs
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
-    if (e.key === 's' || e.key === 'S') {
-      document.getElementById('sameButton').click();
-    }
-    if (e.key === 'm' || e.key === 'M') {
-      document.getElementById('differentButton').click();
-    }
-  });
+  if (e.key === 's' || e.key === 'S') {
+    document.getElementById('sameButton').click();
+  }
+  if (e.key === 'm' || e.key === 'M') {
+    document.getElementById('differentButton').click();
+  }
+});
 
-  // ── PRACTICE BLOCK (must run *before* loading real trials) ──
-  const practiceTrials = [
-    { base_image: "2D_1_X0_Y0_Z0.jpg", comparison_image: "2D_1_X0_Y0_Z10R.jpg", mirrored: true },
-    { base_image: "2D_1_X0_Y0_Z0.jpg", comparison_image: "2D_1_X0_Y0_Z20.jpg",   mirrored: false },
-    { base_image: "2D_1_X0_Y0_Z0.jpg", comparison_image: "2D_1_X0_Y0_Z130.jpg", mirrored: false }
-  ];
-  let practiceIdx = 0;
+// ── PRACTICE BLOCK (must run *before* loading real trials) ──
+const practiceTrials = [
+  { base_image: "2D_1_X0_Y0_Z0.jpg", comparison_image: "2D_1_X0_Y0_Z10R.jpg", mirrored: true },
+  // …
+];
+let practiceIdx = 0;
 
   function runPractice() {
     const t = practiceTrials[practiceIdx];
